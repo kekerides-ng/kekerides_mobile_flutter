@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:keke/screens/login_screen.dart';
 import 'package:keke/screens/verify_otp_screen.dart';
+import 'package:keke/stores/auth_store.dart';
 
-class SignupScreen extends StatefulWidget {
+class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
 
   @override
-  State<SignupScreen> createState() => _SignupScreenState();
+  ConsumerState<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _SignupScreenState extends State<SignupScreen> {
+class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -17,7 +19,6 @@ class _SignupScreenState extends State<SignupScreen> {
   final _confirmPasswordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -61,52 +62,25 @@ class _SignupScreenState extends State<SignupScreen> {
   Future<void> _signup() async {
     if (!_validateFields()) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    final authStore = ref.read(authNotifierProvider.notifier);
 
     try {
-      // TODO: Replace with your actual signup API call
-      // Example API call structure:
-      /*
-      final response = await http.post(
-        Uri.parse('YOUR_SIGNUP_ENDPOINT'),
-        body: {
-          'name': _nameController.text.trim(),
-          'email': _emailController.text.trim(),
-          'phone': _phoneController.text.trim(),
-          'password': _passwordController.text,
-        },
+      final result = await authStore.signUp(
+        name: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        phone: _phoneController.text.trim(),
+        password: _passwordController.text,
+        role: 'passenger', // Default role, adjust as needed
       );
 
-      if (response.statusCode == 200) {
-        // Parse response
-        final data = json.decode(response.body);
-
-        if (data['success'] == true) {
-          // Navigate to OTP screen
-          _navigateToOtpScreen();
-        } else {
-          _showError(data['message'] ?? 'Signup failed');
-        }
+      if (result['success'] == true) {
+        // Navigate to OTP screen
+        _navigateToOtpScreen();
       } else {
-        _showError('Server error: ${response.statusCode}');
+        _showError(result['message'] ?? 'Signup failed');
       }
-      */
-
-      // Simulate API delay
-      await Future.delayed(const Duration(seconds: 2));
-
-      // For demo purposes, navigate to OTP screen
-      _navigateToOtpScreen();
     } catch (error) {
-      _showError('Network error: $error');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      _showError('Signup failed: $error');
     }
   }
 
@@ -117,23 +91,18 @@ class _SignupScreenState extends State<SignupScreen> {
         builder: (context) => VerifyOtpScreen(
           emailOrPhone: _emailController.text.trim(),
           onVerified: () {
-            // TODO: Handle successful verification
-            // You can:
-            // 1. Navigate to home/dashboard
-            // 2. Save user data to local storage
-            // 3. Update auth state
-
-            // Example: Clear all fields after successful signup
+            // Handle successful verification
             _nameController.clear();
             _emailController.clear();
             _phoneController.clear();
             _passwordController.clear();
             _confirmPasswordController.clear();
 
-            // Navigate to home screen
-            // Navigator.pushReplacementNamed(context, '/home');
-
+            // Show success message
             _showSuccess('Account created successfully!');
+
+            // TODO: Navigate to home/dashboard screen
+            // Example: Navigator.pushReplacementNamed(context, '/home');
           },
         ),
       ),
@@ -162,6 +131,9 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authNotifierProvider);
+    final isLoading = authState.isLoading;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -284,7 +256,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _signup,
+                    onPressed: isLoading ? null : _signup,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).primaryColor,
                       foregroundColor: Colors.white,
@@ -293,7 +265,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                       elevation: 0,
                     ),
-                    child: _isLoading
+                    child: isLoading
                         ? const SizedBox(
                       width: 24,
                       height: 24,
@@ -311,6 +283,21 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                   ),
                 ),
+
+                // Show error message from auth store if any
+                if (authState.errorMessage != null && authState.errorMessage!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: Text(
+                      authState.errorMessage!,
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontSize: 14,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+
                 const SizedBox(height: 12),
 
                 // Already have account link
@@ -325,7 +312,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                     ),
                     TextButton(
-                      onPressed: _isLoading
+                      onPressed: isLoading
                           ? null
                           : () => Navigator.push(
                         context,

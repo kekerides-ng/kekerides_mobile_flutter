@@ -4,16 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:keke/screens/splash_screen.dart';
 
 void main() {
-  runApp(const RideApp());
+  runApp(const Keke());
 }
 
-class RideApp extends StatelessWidget {
-  const RideApp({super.key});
+class Keke extends StatelessWidget {
+  const Keke({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'RideApp',
+      title: 'Keke',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primaryColor: const Color(0xFFBF5102),

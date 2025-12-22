@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:keke/stores/auth_store.dart';
 
-class VerifyOtpScreen extends StatefulWidget {
+class VerifyOtpScreen extends ConsumerStatefulWidget {
   final String emailOrPhone;
   final VoidCallback onVerified;
 
@@ -11,16 +13,16 @@ class VerifyOtpScreen extends StatefulWidget {
   });
 
   @override
-  State<VerifyOtpScreen> createState() => _VerifyOtpScreenState();
+  ConsumerState<VerifyOtpScreen> createState() => _VerifyOtpScreenState();
 }
 
-class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
+class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
   final List<TextEditingController> _otpControllers =
   List.generate(6, (_) => TextEditingController());
   final List<FocusNode> _otpFocusNodes = List.generate(6, (_) => FocusNode());
   String _verificationCode = '';
-  bool _isLoading = false;
   int _resendTimer = 60;
+  bool _isResending = false;
 
   @override
   void initState() {
@@ -93,58 +95,88 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
     }
   }
 
-  void _verifyOtp() {
+  Future<void> _verifyOtp() async {
     if (_verificationCode.length != 6) {
       _showError('Please enter the 6-digit code');
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    final authStore = ref.read(authNotifierProvider.notifier);
 
-    // TODO: Implement actual OTP verification
-    print('Verifying OTP: $_verificationCode for ${widget.emailOrPhone}');
+    try {
+      final result = await authStore.verifyOtp(
+        otp: _verificationCode,
+        email: widget.emailOrPhone,
+      );
 
-    // Simulate API call
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+      if (result['success'] == true) {
+        // Clear OTP fields
+        for (var controller in _otpControllers) {
+          controller.clear();
+        }
+        _verificationCode = '';
+
+        // Call the verification success callback
         widget.onVerified();
+      } else {
+        _showError(result['message'] ?? 'OTP verification failed');
+
+        // Clear OTP fields on failure for re-entry
+        for (var controller in _otpControllers) {
+          controller.clear();
+        }
+        _verificationCode = '';
+        FocusScope.of(context).requestFocus(_otpFocusNodes[0]);
       }
-    });
+    } catch (error) {
+      _showError('OTP verification failed: $error');
+    }
   }
 
-  void _resendOtp() {
+  Future<void> _resendOtp() async {
     if (_resendTimer > 0) return;
 
     setState(() {
-      _resendTimer = 60;
-      _isLoading = true;
+      _isResending = true;
     });
 
-    // TODO: Implement resend OTP
-    print('Resending OTP to ${widget.emailOrPhone}');
+    final authStore = ref.read(authNotifierProvider.notifier);
 
-    // Clear OTP fields
-    for (var controller in _otpControllers) {
-      controller.clear();
-    }
-    _verificationCode = '';
-    FocusScope.of(context).requestFocus(_otpFocusNodes[0]);
+    try {
+      final result = await authStore.resendOtp(
+        email: widget.emailOrPhone,
+      );
 
-    // Simulate API call
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
+      if (result['success'] == true) {
+        // Reset timer and clear OTP fields
         setState(() {
-          _isLoading = false;
+          _resendTimer = 60;
+          _isResending = false;
         });
+
+        // Clear OTP fields
+        for (var controller in _otpControllers) {
+          controller.clear();
+        }
+        _verificationCode = '';
+        FocusScope.of(context).requestFocus(_otpFocusNodes[0]);
+
+        // Start the timer again
         _startResendTimer();
+
         _showSuccess('New code sent successfully');
+      } else {
+        _showError(result['message'] ?? 'Failed to resend OTP');
+        setState(() {
+          _isResending = false;
+        });
       }
-    });
+    } catch (error) {
+      _showError('Failed to resend OTP: $error');
+      setState(() {
+        _isResending = false;
+      });
+    }
   }
 
   void _showError(String message) {
@@ -169,6 +201,9 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authNotifierProvider);
+    final isLoading = authState.isLoading;
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -282,7 +317,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _verifyOtp,
+                    onPressed: (isLoading || _verificationCode.length != 6) ? null : _verifyOtp,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFBF5102),
                       foregroundColor: Colors.white,
@@ -291,7 +326,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                       ),
                       elevation: 0,
                     ),
-                    child: _isLoading
+                    child: isLoading
                         ? const SizedBox(
                       width: 24,
                       height: 24,
@@ -309,6 +344,21 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                     ),
                   ),
                 ),
+
+                // Show error message from auth store if any
+                if (authState.errorMessage != null && authState.errorMessage!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: Text(
+                      authState.errorMessage!,
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontSize: 14,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+
                 const SizedBox(height: 24),
 
                 // Resend Code Section
@@ -332,14 +382,23 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                       )
                     else
                       TextButton(
-                        onPressed: _isLoading ? null : _resendOtp,
+                        onPressed: (_isResending || isLoading) ? null : _resendOtp,
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 8,
                           ),
                         ),
-                        child: const Text(
+                        child: _isResending
+                            ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFBF5102)),
+                          ),
+                        )
+                            : const Text(
                           'Resend Code',
                           style: TextStyle(
                             fontSize: 16,

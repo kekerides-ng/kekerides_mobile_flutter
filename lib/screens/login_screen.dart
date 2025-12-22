@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:keke/screens/role_selection_screen.dart';
-import 'package:keke/screens/signup_screen.dart';
+import 'package:keke/screens/verify_otp_screen.dart';
+import 'package:keke/stores/auth_store.dart';
 
 // ============ LOGIN SCREEN ============
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
@@ -23,20 +25,104 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _login() {
-    // TODO: Implement login logic
-    final email = _emailController.text;
-    final password = _passwordController.text;
-    print('Login attempt: $email, $password');
+  bool _validateFields() {
+    if (_emailController.text.isEmpty || !_emailController.text.contains('@')) {
+      _showError('Please enter a valid email address');
+      return false;
+    }
+
+    if (_passwordController.text.isEmpty) {
+      _showError('Please enter your password');
+      return false;
+    }
+
+    return true;
+  }
+
+  Future<void> _login() async {
+    if (!_validateFields()) return;
+
+    final authStore = ref.read(authNotifierProvider.notifier);
+
+    try {
+      final result = await authStore.login(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      if (result['success'] == true) {
+        if (result['needs_verification'] == true) {
+          // Navigate to OTP screen for verification
+          _navigateToOtpScreen();
+        } else {
+          // User is already verified, navigate to home/dashboard
+          _navigateToHome();
+        }
+      } else {
+        _showError(result['message'] ?? 'Login failed');
+      }
+    } catch (error) {
+      _showError('Login failed: $error');
+    }
+  }
+
+  void _navigateToOtpScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => VerifyOtpScreen(
+          emailOrPhone: _emailController.text.trim(),
+          onVerified: () {
+            // Handle successful verification
+            _navigateToHome();
+          },
+        ),
+      ),
+    );
+  }
+
+  void _navigateToHome() {
+    // TODO: Navigate to home/dashboard screen
+    // Example: Navigator.pushReplacementNamed(context, '/home');
+
+    // For now, show success message and clear fields
+    _showSuccess('Login successful!');
+    _emailController.clear();
+    _passwordController.clear();
   }
 
   void _forgotPassword() {
     // TODO: Implement forgot password flow
     print('Forgot password tapped');
+    // You can navigate to forgot password screen
+    // Navigator.push(context, MaterialPageRoute(builder: (context) => ForgotPasswordScreen()));
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authNotifierProvider);
+    final isLoading = authState.isLoading;
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -54,7 +140,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         TextSpan(
                           text: 'Welcome ',
                           style: TextStyle(
-                            color: Color(0xFF3B3B3B),
+                            color: const Color(0xFF3B3B3B),
                             fontSize: 32,
                             fontWeight: FontWeight.bold,
                           ),
@@ -164,7 +250,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: _login,
+                    onPressed: isLoading ? null : _login,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFBF5102),
                       foregroundColor: Colors.white,
@@ -173,7 +259,16 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       elevation: 0,
                     ),
-                    child: const Text(
+                    child: isLoading
+                        ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                        : const Text(
                       'Sign In',
                       style: TextStyle(
                         fontSize: 18,
@@ -182,6 +277,21 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
+
+                // Show error message from auth store if any
+                if (authState.errorMessage != null && authState.errorMessage!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: Text(
+                      authState.errorMessage!,
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontSize: 14,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+
                 const SizedBox(height: 24),
 
                 // Divider with "or"
@@ -244,7 +354,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(color: Color(0xFF6B7280)),
                     ),
                     TextButton(
-                      onPressed: () {
+                      onPressed: isLoading
+                          ? null
+                          : () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(

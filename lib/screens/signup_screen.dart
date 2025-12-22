@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:keke/screens/login_screen.dart';
-import 'package:keke/screens/role_selection_screen.dart';
+import 'package:keke/screens/verify_otp_screen.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -17,7 +17,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _confirmPasswordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
-  bool _agreeToTerms = false;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -29,23 +29,135 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 
-  void _signup() {
+  bool _validateFields() {
+    if (_nameController.text.isEmpty) {
+      _showError('Please enter your full name');
+      return false;
+    }
+
+    if (_emailController.text.isEmpty || !_emailController.text.contains('@')) {
+      _showError('Please enter a valid email address');
+      return false;
+    }
+
+    if (_phoneController.text.isEmpty || _phoneController.text.length < 10) {
+      _showError('Please enter a valid phone number');
+      return false;
+    }
+
+    if (_passwordController.text.length < 6) {
+      _showError('Password must be at least 6 characters');
+      return false;
+    }
+
     if (_passwordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passwords do not match')),
-      );
-      return;
+      _showError('Passwords do not match');
+      return false;
     }
 
-    if (!_agreeToTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please agree to terms and conditions')),
-      );
-      return;
-    }
+    return true;
+  }
 
-    // TODO: Implement signup logic
-    print('Signup attempt: ${_emailController.text}');
+  Future<void> _signup() async {
+    if (!_validateFields()) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // TODO: Replace with your actual signup API call
+      // Example API call structure:
+      /*
+      final response = await http.post(
+        Uri.parse('YOUR_SIGNUP_ENDPOINT'),
+        body: {
+          'name': _nameController.text.trim(),
+          'email': _emailController.text.trim(),
+          'phone': _phoneController.text.trim(),
+          'password': _passwordController.text,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        // Parse response
+        final data = json.decode(response.body);
+
+        if (data['success'] == true) {
+          // Navigate to OTP screen
+          _navigateToOtpScreen();
+        } else {
+          _showError(data['message'] ?? 'Signup failed');
+        }
+      } else {
+        _showError('Server error: ${response.statusCode}');
+      }
+      */
+
+      // Simulate API delay
+      await Future.delayed(const Duration(seconds: 2));
+
+      // For demo purposes, navigate to OTP screen
+      _navigateToOtpScreen();
+    } catch (error) {
+      _showError('Network error: $error');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _navigateToOtpScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => VerifyOtpScreen(
+          emailOrPhone: _emailController.text.trim(),
+          onVerified: () {
+            // TODO: Handle successful verification
+            // You can:
+            // 1. Navigate to home/dashboard
+            // 2. Save user data to local storage
+            // 3. Update auth state
+
+            // Example: Clear all fields after successful signup
+            _nameController.clear();
+            _emailController.clear();
+            _phoneController.clear();
+            _passwordController.clear();
+            _confirmPasswordController.clear();
+
+            // Navigate to home screen
+            // Navigator.pushReplacementNamed(context, '/home');
+
+            _showSuccess('Account created successfully!');
+          },
+        ),
+      ),
+    );
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
@@ -73,7 +185,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       TextSpan(
                         text: 'Hello ',
                         style: TextStyle(
-                          color: Color(0xFF3B3B3B),
+                          color: const Color(0xFF3B3B3B),
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
                         ),
@@ -142,20 +254,6 @@ class _SignupScreenState extends State<SignupScreen> {
                     },
                   ),
                 ),
-                // const SizedBox(height: 8),
-                // const Align(
-                //   alignment: Alignment.centerLeft,
-                //   child: Padding(
-                //     padding: EdgeInsets.only(left: 4),
-                //     child: Text(
-                //       'Use at least 8 characters with letters and numbers',
-                //       style: TextStyle(
-                //         fontSize: 12,
-                //         color: Color(0xFF9CA3AF),
-                //       ),
-                //     ),
-                //   ),
-                // ),
                 const SizedBox(height: 18),
 
                 // Confirm Password Field
@@ -179,63 +277,6 @@ class _SignupScreenState extends State<SignupScreen> {
                     },
                   ),
                 ),
-                // const SizedBox(height: 24),
-
-                // Terms and Conditions
-                // Row(
-                //   children: [
-                //     Checkbox(
-                //       value: _agreeToTerms,
-                //       onChanged: (value) {
-                //         setState(() {
-                //           _agreeToTerms = value ?? false;
-                //         });
-                //       },
-                //       activeColor: const Color(0xFFBF5102),
-                //       shape: RoundedRectangleBorder(
-                //         borderRadius: BorderRadius.circular(4),
-                //       ),
-                //     ),
-                //     Expanded(
-                //       child: RichText(
-                //         text: const TextSpan(
-                //           children: [
-                //             TextSpan(
-                //               text: 'I agree to the ',
-                //               style: TextStyle(
-                //                 color: Color(0xFF4B5563),
-                //                 fontSize: 14,
-                //               ),
-                //             ),
-                //             TextSpan(
-                //               text: 'Terms of Service',
-                //               style: TextStyle(
-                //                 color: Color(0xFFBF5102),
-                //                 fontWeight: FontWeight.w600,
-                //                 fontSize: 14,
-                //               ),
-                //             ),
-                //             TextSpan(
-                //               text: ' and ',
-                //               style: TextStyle(
-                //                 color: Color(0xFF4B5563),
-                //                 fontSize: 14,
-                //               ),
-                //             ),
-                //             TextSpan(
-                //               text: 'Privacy Policy',
-                //               style: TextStyle(
-                //                 color: Color(0xFFBF5102),
-                //                 fontWeight: FontWeight.w600,
-                //                 fontSize: 14,
-                //               ),
-                //             ),
-                //           ],
-                //         ),
-                //       ),
-                //     ),
-                //   ],
-                // ),
                 const SizedBox(height: 48),
 
                 // Sign Up Button
@@ -243,7 +284,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: _signup,
+                    onPressed: _isLoading ? null : _signup,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).primaryColor,
                       foregroundColor: Colors.white,
@@ -252,7 +293,16 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                       elevation: 0,
                     ),
-                    child: const Text(
+                    child: _isLoading
+                        ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                        : const Text(
                       'Create Account',
                       style: TextStyle(
                         fontSize: 18,
@@ -275,7 +325,9 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                     ),
                     TextButton(
-                      onPressed: () => Navigator.push(
+                      onPressed: _isLoading
+                          ? null
+                          : () => Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => const LoginScreen(),

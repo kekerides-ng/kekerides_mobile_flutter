@@ -1,9 +1,14 @@
-
-
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:keke/screens/splash_screen.dart';
+import 'package:keke/services/preferences_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize services
+  await PreferencesService.init();
+
   runApp(const Keke());
 }
 
@@ -12,13 +17,20 @@ class Keke extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Keke',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primaryColor: const Color(0xFFBF5102),
+    return ProviderScope(
+      child: MaterialApp(
+        title: 'Keke',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          primaryColor: const Color(0xFFBF5102),
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFFBF5102),
+            primary: const Color(0xFFBF5102),
+          ),
+          useMaterial3: true,
+        ),
+        home: const SplashScreen(),
       ),
-      home: const SplashScreen(),
     );
   }
 }

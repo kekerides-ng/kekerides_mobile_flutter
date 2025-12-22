@@ -1,3 +1,3 @@
 class Constants {
-  static const String baseUrl = 'https://kekerides-backend.onrender.com';
+  static const String baseUrl = 'https://kekerides-backend.onrender.com/api/v1';
 }

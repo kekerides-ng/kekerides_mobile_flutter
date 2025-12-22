@@ -276,7 +276,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(isLoading: true, errorMessage: null);
 
       final response = await _dio().post(
-        '/auth/login', // Adjust endpoint as needed
+        '/auth/signin', // Adjust endpoint as needed
         data: {
           'email': email,
           'password': password,

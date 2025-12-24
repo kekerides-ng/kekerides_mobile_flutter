@@ -211,19 +211,22 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
           child: Padding(
             padding: const EdgeInsets.all(20.0),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Back button
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded),
-                  color: const Color(0xFF4B5563),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
+                // Back button aligned to start
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                    color: const Color(0xFF4B5563),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
                 ),
                 const SizedBox(height: 20),
 
-                // Title
+                // Title - centered
                 const Text(
                   'Verify Code',
                   style: TextStyle(
@@ -231,37 +234,41 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF3B3B3B),
                   ),
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
 
-                // Description
-                RichText(
-                  text: TextSpan(
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Color(0xFF6B7280),
+                // Description - centered
+                Column(
+                  children: [
+                    const Text(
+                      'Enter the 6-digit code sent to',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF6B7280),
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    children: [
-                      const TextSpan(
-                        text: 'Enter the 6-digit code sent to\n',
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.emailOrPhone,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF374151),
                       ),
-                      TextSpan(
-                        text: widget.emailOrPhone,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF374151),
-                        ),
-                      ),
-                    ],
-                  ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 40),
 
-                // OTP Input Fields
+                // OTP Input Fields - centered with proper spacing
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(6, (index) {
-                    return SizedBox(
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
                       width: 50,
                       child: TextField(
                         controller: _otpControllers[index],
@@ -312,12 +319,14 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // Verify Button
+                // Verify Button - centered
                 SizedBox(
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: (isLoading || _verificationCode.length != 6) ? null : _verifyOtp,
+                    onPressed: (isLoading || _verificationCode.length != 6)
+                        ? null
+                        : _verifyOtp,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFBF5102),
                       foregroundColor: Colors.white,
@@ -332,7 +341,8 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                       height: 24,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor:
+                        AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
                         : const Text(
@@ -346,7 +356,8 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                 ),
 
                 // Show error message from auth store if any
-                if (authState.errorMessage != null && authState.errorMessage!.isNotEmpty)
+                if (authState.errorMessage != null &&
+                    authState.errorMessage!.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 16),
                     child: Text(
@@ -361,7 +372,7 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
 
                 const SizedBox(height: 24),
 
-                // Resend Code Section
+                // Resend Code Section - centered
                 Column(
                   children: [
                     Text(
@@ -370,6 +381,7 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                         color: Colors.grey.shade600,
                         fontSize: 15,
                       ),
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
                     if (_resendTimer > 0)
@@ -379,10 +391,12 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                           color: Colors.grey.shade600,
                           fontSize: 14,
                         ),
+                        textAlign: TextAlign.center,
                       )
                     else
                       TextButton(
-                        onPressed: (_isResending || isLoading) ? null : _resendOtp,
+                        onPressed:
+                        (_isResending || isLoading) ? null : _resendOtp,
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 16,
@@ -395,7 +409,8 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFBF5102)),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                                Color(0xFFBF5102)),
                           ),
                         )
                             : const Text(
@@ -411,7 +426,7 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                 ),
                 const SizedBox(height: 40),
 
-                // Alternative contact method
+                // Alternative contact method - centered
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -423,7 +438,7 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                     ),
                   ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       const Text(
                         'Having trouble?',
@@ -432,6 +447,7 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF374151),
                         ),
+                        textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -441,6 +457,7 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                           color: Colors.grey.shade600,
                           height: 1.5,
                         ),
+                        textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 12),
                       GestureDetector(
@@ -455,6 +472,7 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                             fontWeight: FontWeight.w600,
                             color: Color(0xFFBF5102),
                           ),
+                          textAlign: TextAlign.center,
                         ),
                       ),
                     ],

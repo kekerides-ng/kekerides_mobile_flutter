@@ -199,54 +199,121 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// Sign up with email, password, name, and phone
   Future<Map<String, dynamic>> signUp({
-    required String name,
+    required String firstName,
+    required String lastName,
     required String email,
     required String phone,
     required String password,
-    String? role, // passenger or driver
+    String? role,
   }) async {
     try {
+      print('📡 SIGNUP REQUEST STARTED');
+      print('📤 Data: {name: $firstName, email: $email, phone: $phone}');
+
       state = state.copyWith(isLoading: true, errorMessage: null);
 
       final response = await _dio().post(
-        '/auth/signup', // Adjust endpoint as needed
+        '/auth/signup',
         data: {
-          'name': name,
+          'firstname': firstName,
+          'lastname': lastName,
           'email': email,
           'phone': phone,
           'password': password,
+          'password_confirmation': password,
           'role': role ?? 'passenger',
         },
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'User-Agent': 'KekeApp/1.0',
+          },
+          validateStatus: (status) => status != null && status < 500,
+        ),
       );
 
-      final data = response.data;
-      final token = data['data']?['token'] ?? data['token'];
+      print('📥 SIGNUP RESPONSE STATUS: ${response.statusCode}');
+      print('📥 RESPONSE DATA TYPE: ${response.data.runtimeType}');
+      print('📥 RESPONSE DATA: ${response.data}');
 
-      if (token != null && token.isNotEmpty) {
-        await SecureStorage.saveToken(token);
+      // Your API returns: {responseCode: '200', responseMessage: 'success', data: 'OTP message...', timestamp: '...'}
+      if (response.statusCode == 200) {
+        final responseData = response.data as Map<String, dynamic>;
 
-        // Store email for OTP verification
+        // Check if response indicates success
+        if (responseData['responseCode'] == '200' ||
+            responseData['responseMessage']?.toLowerCase() == 'success') {
+
+          print('✅ Signup successful, OTP generated');
+
+          // Store email for OTP verification
+          state = state.copyWith(
+            isLoading: false,
+            tempEmail: email, // Store email for OTP verification
+            errorMessage: null,
+          );
+
+          return {
+            'success': true,
+            'message': responseData['data'] ?? 'OTP sent successfully',
+            'needs_verification': true, // Flag to indicate OTP is needed
+          };
+        } else {
+          // API returned error
+          final errorMsg = responseData['data']?.toString() ??
+              responseData['responseMessage']?.toString() ??
+              'Registration failed';
+
+          state = state.copyWith(
+            isLoading: false,
+            errorMessage: errorMsg,
+          );
+
+          return {
+            'success': false,
+            'message': errorMsg,
+          };
+        }
+      } else {
+        // Non-200 status code
+        final responseData = response.data as Map<String, dynamic>;
+        final errorMsg = responseData['data']?.toString() ??
+            responseData['responseMessage']?.toString() ??
+            'Registration failed with status ${response.statusCode}';
+
         state = state.copyWith(
           isLoading: false,
-          token: token,
-          tempEmail: email,
-          errorMessage: null,
+          errorMessage: errorMsg,
         );
 
         return {
-          'success': true,
-          'message': 'Account created successfully. Please verify your email.',
-          'data': data,
-        };
-      } else {
-        state = state.copyWith(isLoading: false, errorMessage: 'Token not received');
-        return {
           'success': false,
-          'message': 'Token not received from server',
+          'message': errorMsg,
         };
       }
+
     } on DioException catch (e) {
-      final errorMessage = e.response?.data?['message'] ?? e.message ?? 'Signup failed';
+      print('❌ SIGNUP DIO ERROR: ${e.type}');
+      print('❌ Error message: ${e.message}');
+      print('❌ Response: ${e.response?.data}');
+      print('❌ Status: ${e.response?.statusCode}');
+
+      String errorMessage = 'Signup failed';
+      if (e.type == DioExceptionType.connectionTimeout) {
+        errorMessage = 'Connection timeout. Server may be spinning up.';
+      } else if (e.response?.data != null) {
+        try {
+          final errorData = e.response!.data as Map<String, dynamic>;
+          errorMessage = errorData['data']?.toString() ??
+              errorData['responseMessage']?.toString() ??
+              errorMessage;
+        } catch (_) {
+          // If we can't parse the error, use the raw response
+          errorMessage = e.response!.data.toString();
+        }
+      }
+
       state = state.copyWith(
         isLoading: false,
         errorMessage: errorMessage,
@@ -256,6 +323,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
         'message': errorMessage,
       };
     } catch (e) {
+      print('❌ SIGNUP UNKNOWN ERROR: $e');
+      print('❌ Error type: ${e.runtimeType}');
+
       state = state.copyWith(
         isLoading: false,
         errorMessage: e.toString(),

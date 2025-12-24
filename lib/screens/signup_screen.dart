@@ -12,7 +12,8 @@ class SignupScreen extends ConsumerStatefulWidget {
 }
 
 class _SignupScreenState extends ConsumerState<SignupScreen> {
-  final _nameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -22,7 +23,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
@@ -31,8 +33,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   }
 
   bool _validateFields() {
-    if (_nameController.text.isEmpty) {
-      _showError('Please enter your full name');
+    if (_firstNameController.text.isEmpty) {
+      _showError('Please enter your first name');
+      return false;
+    }
+
+    if (_lastNameController.text.isEmpty) {
+      _showError('Please enter your last name');
       return false;
     }
 
@@ -65,12 +72,14 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     final authStore = ref.read(authNotifierProvider.notifier);
 
     try {
+
       final result = await authStore.signUp(
-        name: _nameController.text.trim(),
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
         email: _emailController.text.trim(),
         phone: _phoneController.text.trim(),
         password: _passwordController.text,
-        role: 'passenger', // Default role, adjust as needed
+        role: 'passenger',
       );
 
       if (result['success'] == true) {
@@ -92,7 +101,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           emailOrPhone: _emailController.text.trim(),
           onVerified: () {
             // Handle successful verification
-            _nameController.clear();
+            _firstNameController.clear();
+            _lastNameController.clear();
             _emailController.clear();
             _phoneController.clear();
             _passwordController.clear();
@@ -175,13 +185,31 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // Name Field
-                _buildBottomBorderTextField(
-                  controller: _nameController,
-                  labelText: 'Full Name',
-                  hintText: 'Enter your full name',
-                  keyboardType: TextInputType.name,
-                  prefixIcon: Icons.person_outline,
+                // First Name and Last Name Fields (Side by Side)
+                Row(
+                  children: [
+                    // First Name Field
+                    Expanded(
+                      child: _buildBottomBorderTextField(
+                        controller: _firstNameController,
+                        labelText: 'First Name',
+                        hintText: 'First name',
+                        keyboardType: TextInputType.name,
+                        prefixIcon: Icons.person_outline,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // Last Name Field
+                    Expanded(
+                      child: _buildBottomBorderTextField(
+                        controller: _lastNameController,
+                        labelText: 'Last Name',
+                        hintText: 'Last name',
+                        keyboardType: TextInputType.name,
+                        prefixIcon: null, // No icon for last name to save space
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 18),
 

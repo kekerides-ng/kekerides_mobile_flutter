@@ -251,7 +251,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // Login Button
                 SizedBox(
                   width: double.infinity,
                   height: 56,

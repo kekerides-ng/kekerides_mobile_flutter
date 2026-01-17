@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:keke/stores/auth_store.dart';
@@ -17,21 +18,20 @@ class VerifyOtpScreen extends ConsumerStatefulWidget {
 }
 
 class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
-  final List<TextEditingController> _otpControllers =
-  List.generate(6, (_) => TextEditingController());
-  final List<FocusNode> _otpFocusNodes = List.generate(6, (_) => FocusNode());
+  late List<TextEditingController> _otpControllers;
+  late List<FocusNode> _otpFocusNodes;
   String _verificationCode = '';
+
   int _resendTimer = 60;
+  Timer? _timer;
   bool _isResending = false;
 
   @override
   void initState() {
     super.initState();
+    _otpControllers = List.generate(6, (index) => TextEditingController());
+    _otpFocusNodes = List.generate(6, (index) => FocusNode());
     _startResendTimer();
-    // Auto-focus first OTP field
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      FocusScope.of(context).requestFocus(_otpFocusNodes[0]);
-    });
   }
 
   @override
@@ -42,18 +42,18 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
     for (var focusNode in _otpFocusNodes) {
       focusNode.dispose();
     }
+    _timer?.cancel();
     super.dispose();
   }
 
   void _startResendTimer() {
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_resendTimer > 0) {
         setState(() {
-          if (_resendTimer > 0) {
-            _resendTimer--;
-            _startResendTimer();
-          }
+          _resendTimer--;
         });
+      } else {
+        _timer?.cancel();
       }
     });
   }
@@ -61,46 +61,31 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
   void _handleOtpInput(int index, String value) {
     // Update the verification code
     final otpDigits = _verificationCode.split('');
-    if (index < otpDigits.length) {
-      otpDigits[index] = value;
-    } else {
-      otpDigits.add(value);
+    while (otpDigits.length <= index) {
+      otpDigits.add('');
     }
+    otpDigits[index] = value;
     _verificationCode = otpDigits.join();
 
-    // Move focus to next field
-    if (value.isNotEmpty && index < 5) {
+    // Move to the next field if there is a value
+    if (value.isNotEmpty && index < _otpControllers.length - 1) {
       FocusScope.of(context).requestFocus(_otpFocusNodes[index + 1]);
     }
 
-    // Auto-submit when all digits are entered
-    if (_verificationCode.length == 6) {
+    // If all fields are filled, trigger verification
+    if (_verificationCode.length == 6 &&
+        !_verificationCode.contains(RegExp(r'\s'))) {
       _verifyOtp();
     }
   }
 
   void _handleBackspace(int index, String value) {
     if (value.isEmpty && index > 0) {
-      // Move focus to previous field
       FocusScope.of(context).requestFocus(_otpFocusNodes[index - 1]);
-      // Clear previous field
-      _otpControllers[index - 1].clear();
-
-      // Update verification code
-      final otpDigits = _verificationCode.split('');
-      if (index - 1 < otpDigits.length) {
-        otpDigits[index - 1] = '';
-      }
-      _verificationCode = otpDigits.join();
     }
   }
 
   Future<void> _verifyOtp() async {
-    if (_verificationCode.length != 6) {
-      _showError('Please enter the 6-digit code');
-      return;
-    }
-
     final authStore = ref.read(authNotifierProvider.notifier);
 
     try {
@@ -110,18 +95,10 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
       );
 
       if (result['success'] == true) {
-        // Clear OTP fields
-        for (var controller in _otpControllers) {
-          controller.clear();
-        }
-        _verificationCode = '';
-
-        // Call the verification success callback
         widget.onVerified();
       } else {
         _showError(result['message'] ?? 'OTP verification failed');
-
-        // Clear OTP fields on failure for re-entry
+        // Clear OTP fields on failure
         for (var controller in _otpControllers) {
           controller.clear();
         }
@@ -270,6 +247,16 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                     return Container(
                       margin: const EdgeInsets.symmetric(horizontal: 4),
                       width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: _otpFocusNodes[index].hasFocus
+                              ? const Color(0xFFBF5102)
+                              : Colors.grey.shade400,
+                          width: 2,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                       child: TextField(
                         controller: _otpControllers[index],
                         focusNode: _otpFocusNodes[index],
@@ -281,21 +268,10 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF111827),
                         ),
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           counterText: '',
-                          enabledBorder: UnderlineInputBorder(
-                            borderSide: BorderSide(
-                              color: Colors.grey.shade400,
-                              width: 2,
-                            ),
-                          ),
-                          focusedBorder: const UnderlineInputBorder(
-                            borderSide: BorderSide(
-                              color: Color(0xFFBF5102),
-                              width: 2,
-                            ),
-                          ),
-                          contentPadding: const EdgeInsets.only(bottom: 8),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.zero,
                         ),
                         onChanged: (value) {
                           if (value.isNotEmpty) {

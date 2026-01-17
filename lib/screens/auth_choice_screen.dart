@@ -13,7 +13,7 @@ class AuthChoiceScreen extends StatelessWidget {
     Color? textColor,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 6.0), // Reduced vertical padding
       child: Material(
         color: Colors.white,
         elevation: 2,
@@ -22,7 +22,7 @@ class AuthChoiceScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           onTap: onTap,
           child: Container(
-            height: 52,
+            height: 50, // Reduced height
             padding: const EdgeInsets.symmetric(horizontal: 16),
             alignment: Alignment.centerLeft,
             child: Row(
@@ -34,7 +34,7 @@ class AuthChoiceScreen extends StatelessWidget {
                     child: Text(
                       text,
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 15, // Reduced font size
                         fontWeight: FontWeight.w600,
                         color: textColor ?? Colors.black,
                       ),
@@ -70,17 +70,18 @@ class AuthChoiceScreen extends StatelessWidget {
           children: [
             // Top area: logo + tagline
             Expanded(
-              flex: 6,
+              flex: 5, // Adjusted flex factor
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 36),
-                  Image.asset('images/logo2.png', width: 120),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 24),
+                  Image.asset('images/logo2.png', width: 110),
+                  const SizedBox(height: 10),
                   const Text(
                     'Ride hailing made easy',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 15,
                       height: 1.3,
                       color: Color(0xFF333333),
                     ),
@@ -91,7 +92,7 @@ class AuthChoiceScreen extends StatelessWidget {
 
             // Bottom card-like area with gradient background
             Expanded(
-              flex: 7,
+              flex: 8, // Adjusted flex factor
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
@@ -102,79 +103,75 @@ class AuthChoiceScreen extends StatelessWidget {
                 ),
                 child: Padding(
                   padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
                   child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const SizedBox(height: 12),
-
                       // Social buttons with actual logos
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Column(
-                          children: [
-                            // Google button with logo
-                            _buildAuthButton(
-                              leading: Image.asset(
-                                'images/google.png', // Add your Google logo image
-                                width: 24,
-                                height: 24,
-                              ),
-                              text: 'Continue with Google',
-                              onTap: () {
-                                // TODO: implement google sign in
-                              },
+                      Column(
+                        children: [
+                          // Google button with logo
+                          _buildAuthButton(
+                            leading: Image.asset(
+                              'images/google.png', // Add your Google logo image
+                              width: 22,
+                              height: 22,
                             ),
+                            text: 'Continue with Google',
+                            onTap: () {
+                              // TODO: implement google sign in
+                            },
+                          ),
 
-                            // Apple button with logo
-                            _buildAuthButton(
-                              leading: Image.asset(
-                                'images/apple.png', // Add your Apple logo image
-                                width: 24,
-                                height: 24,
-                              ),
-                              text: 'Continue with Apple',
-                              onTap: () {
-                                // TODO: implement apple sign in
-                              },
+                          // Apple button with logo
+                          _buildAuthButton(
+                            leading: Image.asset(
+                              'images/apple.png', // Add your Apple logo image
+                              width: 22,
+                              height: 22,
                             ),
+                            text: 'Continue with Apple',
+                            onTap: () {
+                              // TODO: implement apple sign in
+                            },
+                          ),
 
-                            // Facebook button with logo
-                            _buildAuthButton(
-                              leading: Image.asset(
-                                'images/facebook_logo.png', // Add your Facebook logo image
-                                width: 24,
-                                height: 24,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    width: 24,
-                                    height: 24,
-                                    decoration: BoxDecoration(
-                                      color: Color(0xFF1877F2),
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    child: const Center(
-                                      child: Text(
-                                        'f',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                          color: Colors.white,
-                                        ),
+                          // Facebook button with logo
+                          _buildAuthButton(
+                            leading: Image.asset(
+                              'images/facebook_logo.png', // Add your Facebook logo image
+                              width: 22,
+                              height: 22,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  width: 24,
+                                  height: 24,
+                                  decoration: BoxDecoration(
+                                    color: Color(0xFF1877F2),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: const Center(
+                                    child: Text(
+                                      'f',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        color: Colors.white,
                                       ),
                                     ),
-                                  );
-                                },
-                              ),
-                              text: 'Continue with Facebook',
-                              onTap: () {
-                                // TODO: implement facebook sign in
+                                  ),
+                                );
                               },
                             ),
-                          ],
-                        ),
+                            text: 'Continue with Facebook',
+                            onTap: () {
+                              // TODO: implement facebook sign in
+                            },
+                          ),
+                        ],
                       ),
 
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 12),
 
                       // Divider with "Or"
                       Row(
@@ -190,7 +187,8 @@ class AuthChoiceScreen extends StatelessWidget {
                             child: Text(
                               'Or',
                               style: TextStyle(
-                                  color: Colors.white, fontWeight: FontWeight.w600),
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600),
                             ),
                           ),
                           Expanded(
@@ -223,7 +221,7 @@ class AuthChoiceScreen extends StatelessWidget {
 
                       // Bottom footer
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
+                        padding: const EdgeInsets.only(bottom: 4),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -257,8 +255,6 @@ class AuthChoiceScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-
-                      const SizedBox(height: 4),
                     ],
                   ),
                 ),

@@ -8,7 +8,7 @@ import '../services/dio_provider.dart';
 import '../services/preferences_service.dart';
 
 final navigatorKeyProvider =
-Provider<GlobalKey<NavigatorState>>((ref) => GlobalKey<NavigatorState>());
+    Provider<GlobalKey<NavigatorState>>((ref) => GlobalKey<NavigatorState>());
 
 class AuthState {
   final bool isLoading;
@@ -48,14 +48,15 @@ class AuthState {
       token: token ?? this.token,
       errorMessage: errorMessage,
       user: user ?? this.user,
-      hasCheckedInitialAuth: hasCheckedInitialAuth ?? this.hasCheckedInitialAuth,
+      hasCheckedInitialAuth:
+          hasCheckedInitialAuth ?? this.hasCheckedInitialAuth,
       tempEmail: tempEmail ?? this.tempEmail,
     );
   }
 }
 
 final authNotifierProvider =
-StateNotifierProvider<AuthNotifier, AuthState>((ref) => AuthNotifier(ref));
+    StateNotifierProvider<AuthNotifier, AuthState>((ref) => AuthNotifier(ref));
 
 class AuthNotifier extends StateNotifier<AuthState> {
   final Ref ref;
@@ -168,7 +169,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
         user: userMap,
         hasCheckedInitialAuth: true,
       );
-
     } on DioException catch (e) {
       final status = e.response?.statusCode;
       print('AUTH: Fetch user failed with status $status: ${e.message}');
@@ -178,14 +178,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
         return;
       }
 
-      final errorMessage = e.response?.data?['message'] ?? e.message ?? 'Failed to fetch user';
+      final errorMessage =
+          e.response?.data?['message'] ?? e.message ?? 'Failed to fetch user';
       state = state.copyWith(
         isLoading: false,
         isAuthenticated: false,
         errorMessage: errorMessage,
         hasCheckedInitialAuth: true,
       );
-
     } catch (e) {
       print('AUTH: Unexpected error fetching user: $e');
       state = state.copyWith(
@@ -204,11 +204,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String email,
     required String phone,
     required String password,
+    required String confirmPassword,
+    required bool acceptTerms,
     String? role,
   }) async {
     try {
       print('📡 SIGNUP REQUEST STARTED');
-      print('📤 Data: {name: $firstName, email: $email, phone: $phone}');
+      print(
+          '📤 Data: {firstName: $firstName, lastName: $lastName, email: $email, phone: $phone}');
 
       state = state.copyWith(isLoading: true, errorMessage: null);
 
@@ -220,7 +223,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
           'email': email,
           'phone': phone,
           'password': password,
-          'password_confirmation': password,
+          'password_confirmation': confirmPassword,
+          'acceptTerms': acceptTerms,
           'role': role ?? 'passenger',
         },
         options: Options(
@@ -237,30 +241,25 @@ class AuthNotifier extends StateNotifier<AuthState> {
       print('📥 RESPONSE DATA TYPE: ${response.data.runtimeType}');
       print('📥 RESPONSE DATA: ${response.data}');
 
-      // Your API returns: {responseCode: '200', responseMessage: 'success', data: 'OTP message...', timestamp: '...'}
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = response.data as Map<String, dynamic>;
 
-        // Check if response indicates success
         if (responseData['responseCode'] == '200' ||
             responseData['responseMessage']?.toLowerCase() == 'success') {
-
           print('✅ Signup successful, OTP generated');
 
-          // Store email for OTP verification
           state = state.copyWith(
             isLoading: false,
-            tempEmail: email, // Store email for OTP verification
+            tempEmail: email,
             errorMessage: null,
           );
 
           return {
             'success': true,
             'message': responseData['data'] ?? 'OTP sent successfully',
-            'needs_verification': true, // Flag to indicate OTP is needed
+            'needs_verification': true,
           };
         } else {
-          // API returned error
           final errorMsg = responseData['data']?.toString() ??
               responseData['responseMessage']?.toString() ??
               'Registration failed';
@@ -276,7 +275,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
           };
         }
       } else {
-        // Non-200 status code
         final responseData = response.data as Map<String, dynamic>;
         final errorMsg = responseData['data']?.toString() ??
             responseData['responseMessage']?.toString() ??
@@ -292,7 +290,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
           'message': errorMsg,
         };
       }
-
     } on DioException catch (e) {
       print('❌ SIGNUP DIO ERROR: ${e.type}');
       print('❌ Error message: ${e.message}');
@@ -309,7 +306,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
               errorData['responseMessage']?.toString() ??
               errorMessage;
         } catch (_) {
-          // If we can't parse the error, use the raw response
           errorMessage = e.response!.data.toString();
         }
       }
@@ -346,7 +342,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(isLoading: true, errorMessage: null);
 
       final response = await _dio().post(
-        '/auth/signin', // Adjust endpoint as needed
+        '/auth/signin',
         data: {
           'email': email,
           'password': password,
@@ -359,11 +355,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
       if (token != null && token.isNotEmpty) {
         await SecureStorage.saveToken(token);
 
-        // Check if user needs OTP verification
         final needsVerification = data['data']?['needs_verification'] ?? false;
 
         if (needsVerification) {
-          // Store email for OTP verification
           state = state.copyWith(
             isLoading: false,
             token: token,
@@ -378,7 +372,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
             'message': 'Please verify your OTP',
           };
         } else {
-          // User is already verified, fetch full user data
           state = state.copyWith(
             isLoading: true,
             token: token,
@@ -394,14 +387,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
           };
         }
       } else {
-        state = state.copyWith(isLoading: false, errorMessage: 'Token not received');
+        state =
+            state.copyWith(isLoading: false, errorMessage: 'Token not received');
         return {
           'success': false,
           'message': 'Token not received from server',
         };
       }
     } on DioException catch (e) {
-      final errorMessage = e.response?.data?['message'] ?? e.message ?? 'Login failed';
+      final errorMessage =
+          e.response?.data?['message'] ?? e.message ?? 'Login failed';
       state = state.copyWith(
         isLoading: false,
         errorMessage: errorMessage,
@@ -425,9 +420,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// Verify OTP
   Future<Map<String, dynamic>> verifyOtp({
     required String otp,
-    String? email, // Optional, use stored email if not provided
+    String? email,
   }) async {
     try {
+      // Clear previous errors and set loading state
       state = state.copyWith(isLoading: true, errorMessage: null);
 
       final verifyEmail = email ?? state.tempEmail;
@@ -436,7 +432,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
 
       final response = await _dio().post(
-        '/auth/verify-otp', // Adjust endpoint as needed
+        '/auth/verify-otp',
         data: {
           'email': verifyEmail,
           'otp': otp,
@@ -449,11 +445,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       if (token != null && token.isNotEmpty) {
         await SecureStorage.saveToken(token);
 
-        // Fetch user data after successful verification
         state = state.copyWith(
           isLoading: true,
           token: token,
-          tempEmail: null, // Clear temp email
+          tempEmail: null,
           isAuthenticated: false,
         );
 
@@ -464,9 +459,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           'message': 'OTP verified successfully',
         };
       } else {
-        // If no token returned but verification successful
         if (data['success'] == true || response.statusCode == 200) {
-          // Try to fetch user with existing token
           final existingToken = state.token ?? await SecureStorage.getToken();
           if (existingToken != null) {
             state = state.copyWith(
@@ -483,15 +476,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
             'message': 'OTP verified successfully',
           };
         }
-
-        state = state.copyWith(isLoading: false, errorMessage: 'Verification failed');
+        final errorMessage = data['data']?.toString() ?? data['message']?.toString() ?? 'Verification failed';
+        state = state.copyWith(isLoading: false, errorMessage: errorMessage);
         return {
           'success': false,
-          'message': 'Verification failed',
+          'message': errorMessage,
         };
       }
     } on DioException catch (e) {
-      final errorMessage = e.response?.data?['message'] ?? e.message ?? 'OTP verification failed';
+      final errorMessage = e.response?.data?['data']?.toString() ??
+          e.response?.data?['message'] ??
+          e.message ??
+          'OTP verification failed';
       state = state.copyWith(
         isLoading: false,
         errorMessage: errorMessage,
@@ -514,7 +510,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// Resend OTP
   Future<Map<String, dynamic>> resendOtp({
-    String? email, // Optional, use stored email if not provided
+    String? email,
   }) async {
     try {
       state = state.copyWith(isLoading: true, errorMessage: null);
@@ -525,20 +521,50 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
 
       final response = await _dio().post(
-        '/auth/resend-otp', // Adjust endpoint as needed
+        '/auth/resend-otp',
         data: {
           'email': resendEmail,
         },
+         options: Options(
+          validateStatus: (status) => status != null && status < 500,
+        ),
       );
 
       state = state.copyWith(isLoading: false);
+      
+      if (response.statusCode == 200) {
+        final responseData = response.data as Map<String, dynamic>;
+         if (responseData['responseCode'] == '200' ||
+            responseData['responseMessage']?.toLowerCase() == 'success') {
+          return {
+            'success': true,
+            'message': responseData['data'] ?? 'OTP sent successfully',
+          };
+        } else {
+           final errorMsg = responseData['data']?.toString() ??
+              responseData['responseMessage']?.toString() ??
+              'Failed to resend OTP';
+          state = state.copyWith(errorMessage: errorMsg);
+           return {
+            'success': false,
+            'message': errorMsg,
+          };
+        }
+      } else {
+        final responseData = response.data as Map<String, dynamic>;
+        final errorMsg = responseData['data']?.toString() ??
+            responseData['responseMessage']?.toString() ??
+            'Failed to resend OTP with status ${response.statusCode}';
+        state = state.copyWith(errorMessage: errorMsg);
+        return {
+          'success': false,
+          'message': errorMsg,
+        };
+      }
 
-      return {
-        'success': true,
-        'message': 'OTP sent successfully',
-      };
     } on DioException catch (e) {
-      final errorMessage = e.response?.data?['message'] ?? e.message ?? 'Failed to resend OTP';
+      final errorMessage =
+          e.response?.data?['message'] ?? e.message ?? 'Failed to resend OTP';
       state = state.copyWith(
         isLoading: false,
         errorMessage: errorMessage,

@@ -20,6 +20,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _confirmPasswordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
+  bool _acceptTerms = false;
 
   @override
   void dispose() {
@@ -63,6 +64,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       return false;
     }
 
+    if (!_acceptTerms) {
+      _showError('You must accept the terms and conditions');
+      return false;
+    }
+
     return true;
   }
 
@@ -72,13 +78,14 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     final authStore = ref.read(authNotifierProvider.notifier);
 
     try {
-
       final result = await authStore.signUp(
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
         email: _emailController.text.trim(),
         phone: _phoneController.text.trim(),
         password: _passwordController.text,
+        confirmPassword: _confirmPasswordController.text,
+        acceptTerms: _acceptTerms,
         role: 'passenger',
       );
 
@@ -277,7 +284,32 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     },
                   ),
                 ),
-                const SizedBox(height: 48),
+                const SizedBox(height: 24),
+
+                // Accept Terms Checkbox
+                Row(
+                  children: [
+                    Checkbox(
+                      value: _acceptTerms,
+                      onChanged: (value) {
+                        setState(() {
+                          _acceptTerms = value ?? false;
+                        });
+                      },
+                      activeColor: Theme.of(context).primaryColor,
+                    ),
+                    const Expanded(
+                      child: Text(
+                        'I agree to the terms and conditions',
+                        style: TextStyle(
+                          color: Color(0xFF6B7280),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
 
                 // Sign Up Button
                 SizedBox(
@@ -295,25 +327,27 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     ),
                     child: isLoading
                         ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
                         : const Text(
-                      'Create Account',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                            'Create Account',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                   ),
                 ),
 
                 // Show error message from auth store if any
-                if (authState.errorMessage != null && authState.errorMessage!.isNotEmpty)
+                if (authState.errorMessage != null &&
+                    authState.errorMessage!.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 16),
                     child: Text(
@@ -343,11 +377,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       onPressed: isLoading
                           ? null
                           : () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const LoginScreen(),
-                        ),
-                      ),
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const LoginScreen(),
+                                ),
+                              ),
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.only(left: 8),
                         minimumSize: Size.zero,

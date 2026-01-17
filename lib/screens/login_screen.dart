@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:keke/screens/home_screen.dart';
 import 'package:keke/screens/role_selection_screen.dart';
 import 'package:keke/screens/verify_otp_screen.dart';
 import 'package:keke/stores/auth_store.dart';
@@ -25,45 +26,50 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  bool _validateFields() {
-    if (_emailController.text.isEmpty || !_emailController.text.contains('@')) {
-      _showError('Please enter a valid email address');
-      return false;
-    }
-
-    if (_passwordController.text.isEmpty) {
-      _showError('Please enter your password');
-      return false;
-    }
-
-    return true;
-  }
+  // bool _validateFields() {
+  //   if (_emailController.text.isEmpty || !_emailController.text.contains('@')) {
+  //     _showError('Please enter a valid email address');
+  //     return false;
+  //   }
+  //
+  //   if (_passwordController.text.isEmpty) {
+  //     _showError('Please enter your password');
+  //     return false;
+  //   }
+  //
+  //   return true;
+  // }
 
   Future<void> _login() async {
-    if (!_validateFields()) return;
+    // if (!_validateFields()) return;
 
-    final authStore = ref.read(authNotifierProvider.notifier);
+    // final authStore = ref.read(authNotifierProvider.notifier);
 
-    try {
-      final result = await authStore.login(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-      );
+    // try {
+    //   final result = await authStore.login(
+    //     email: _emailController.text.trim(),
+    //     password: _passwordController.text,
+    //   );
+    //
+    //   if (result['success'] == true) {
+    //     if (result['needs_verification'] == true) {
+    //       // Navigate to OTP screen for verification
+    //       _navigateToOtpScreen();
+    //     } else {
+    //       // User is already verified, navigate to home/dashboard
+    //       _navigateToHome();
+    //     }
+    //   } else {
+    //     _showError(result['message'] ?? 'Login failed');
+    //   }
+    // } catch (error) {
+    //   _showError('Login failed: $error');
+    // }
 
-      if (result['success'] == true) {
-        if (result['needs_verification'] == true) {
-          // Navigate to OTP screen for verification
-          _navigateToOtpScreen();
-        } else {
-          // User is already verified, navigate to home/dashboard
-          _navigateToHome();
-        }
-      } else {
-        _showError(result['message'] ?? 'Login failed');
-      }
-    } catch (error) {
-      _showError('Login failed: $error');
-    }
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const HomeScreen()),
+    );
   }
 
   void _navigateToOtpScreen() {
@@ -250,7 +256,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: isLoading ? null : _login,
+                    onPressed: _login,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFBF5102),
                       foregroundColor: Colors.white,
@@ -261,36 +267,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     child: isLoading
                         ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
                         : const Text(
-                      'Sign In',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                            'Sign In',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                   ),
                 ),
 
                 // Show error message from auth store if any
-                if (authState.errorMessage != null && authState.errorMessage!.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 16),
-                    child: Text(
-                      authState.errorMessage!,
-                      style: const TextStyle(
-                        color: Colors.red,
-                        fontSize: 14,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
+                // if (authState.errorMessage != null && authState.errorMessage!.isNotEmpty)
+                //   Padding(
+                //     padding: const EdgeInsets.only(top: 16),
+                //     child: Text(
+                //       authState.errorMessage!,
+                //       style: const TextStyle(
+                //         color: Colors.red,
+                //         fontSize: 14,
+                //       ),
+                //       textAlign: TextAlign.center,
+                //     ),
+                //   ),
 
                 const SizedBox(height: 24),
 
@@ -357,13 +364,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       onPressed: isLoading
                           ? null
                           : () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const RoleSelectionScreen(),
-                          ),
-                        );
-                      },
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const RoleSelectionScreen(),
+                                ),
+                              );
+                            },
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.only(left: 8),
                         minimumSize: Size.zero,

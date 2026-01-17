@@ -332,19 +332,19 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                 ),
 
                 // Show error message from auth store if any
-                if (authState.errorMessage != null &&
-                    authState.errorMessage!.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 16),
-                    child: Text(
-                      authState.errorMessage!,
-                      style: const TextStyle(
-                        color: Colors.red,
-                        fontSize: 14,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
+                // if (authState.errorMessage != null &&
+                //     authState.errorMessage!.isNotEmpty)
+                //   Padding(
+                //     padding: const EdgeInsets.only(top: 16),
+                //     child: Text(
+                //       authState.errorMessage!,
+                //       style: const TextStyle(
+                //         color: Colors.red,
+                //         fontSize: 14,
+                //       ),
+                //       textAlign: TextAlign.center,
+                //     ),
+                //   ),
 
                 const SizedBox(height: 24),
 

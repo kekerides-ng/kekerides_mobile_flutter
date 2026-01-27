@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:keke/screens/destination_search_screen.dart';
-import 'package:location/location.dart';
+import 'package:keke/screens/ride_options_screen.dart';
+import 'package:keke/widgets/map_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,72 +12,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-  final Set<Marker> _markers = {};
-  GoogleMapController? _mapController;
-  LocationData? _currentLocation;
-  final Location _location = Location();
-
-  @override
-  void initState() {
-    super.initState();
-    _requestLocationPermission();
-  }
-
-  void _requestLocationPermission() async {
-    bool serviceEnabled;
-    PermissionStatus permissionGranted;
-
-    serviceEnabled = await _location.serviceEnabled();
-    if (!serviceEnabled) {
-      serviceEnabled = await _location.requestService();
-      if (!serviceEnabled) {
-        return;
-      }
-    }
-
-    permissionGranted = await _location.hasPermission();
-    if (permissionGranted == PermissionStatus.denied) {
-      permissionGranted = await _location.requestPermission();
-      if (permissionGranted != PermissionStatus.granted) {
-        return;
-      }
-    }
-
-    _location.onLocationChanged.listen((LocationData currentLocation) {
-      setState(() {
-        _currentLocation = currentLocation;
-        _updateMarker();
-      });
-    });
-  }
-
-  void _updateMarker() {
-    if (_currentLocation != null) {
-      setState(() {
-        _markers.clear();
-        _markers.add(
-          Marker(
-            markerId: const MarkerId('current_location'),
-            position: LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
-            infoWindow: const InfoWindow(title: 'My Location'),
-          ),
-        );
-      });
-    }
-  }
-
-  void _centerOnUser() {
-    if (_currentLocation != null && _mapController != null) {
-      _mapController!.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(
-            target: LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
-            zoom: 16.0,
-          ),
-        ),
-      );
-    }
-  }
+  final GlobalKey<State<MapWidget>> _mapKey = GlobalKey<State<MapWidget>>();
 
   void _onItemTapped(int index) {
     setState(() {
@@ -85,26 +20,13 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  static const CameraPosition _kGooglePlex = CameraPosition(
-    target: LatLng(6.5244, 3.3792), // Lagos, Nigeria
-    zoom: 14.4746,
-  );
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          // Google Map
-          GoogleMap(
-            initialCameraPosition: _kGooglePlex,
-            myLocationEnabled: true,
-            myLocationButtonEnabled: false,
-            markers: _markers,
-            onMapCreated: (GoogleMapController controller) {
-              _mapController = controller;
-            },
-          ),
+          // Map Widget
+          MapWidget(key: _mapKey),
 
           // Top search bar and profile icon
           SafeArea(
@@ -120,7 +42,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           MaterialPageRoute(
                             builder: (context) => const DestinationSearchScreen(),
                           ),
-                        );
+                        ).then((value) {
+                          if (value == true) {
+                            // Show the ride options sheet
+                            _showRideOptionsSheet();
+                          }
+                        });
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(
@@ -157,7 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(width: 12.0),
                   const CircleAvatar(
                     radius: 24,
-                    backgroundImage: AssetImage('images/user_avatar.png'), // Replace with your avatar asset
+                    child: Icon(Icons.person, size: 32),
                   ),
                 ],
               ),
@@ -169,7 +96,11 @@ class _HomeScreenState extends State<HomeScreen> {
             bottom: 300, // Adjust this value to position the button correctly
             right: 16,
             child: FloatingActionButton(
-              onPressed: _centerOnUser,
+              onPressed: () {
+                // Access the MapWidget's state to call centerOnUser
+                final dynamic mapWidgetState = _mapKey.currentState;
+                mapWidgetState?.centerOnUser();
+              },
               backgroundColor: Colors.white,
               child: const Icon(Icons.my_location, color: Colors.black),
             ),
@@ -269,6 +200,15 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showRideOptionsSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const RideOptionsScreen(),
     );
   }
 

@@ -67,7 +67,7 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
             ListTile(
               leading: const Icon(Icons.map_outlined),
               title: const Text('Set location on map'),
-              onTap: () {},
+              onTap: () => Navigator.pop(context, true),
             ),
             const Divider(),
             const SizedBox(height: 12.0),
@@ -116,7 +116,7 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
       leading: const Icon(Icons.history, color: Colors.grey),
       title: Text(title),
       subtitle: Text(subtitle),
-      onTap: () {},
+      onTap: () => Navigator.pop(context, true),
     );
   }
 }

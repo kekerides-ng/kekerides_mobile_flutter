@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:keke/screens/home_screen.dart';
 import 'package:keke/screens/login_screen.dart';
 import 'package:keke/screens/verify_otp_screen.dart';
 import 'package:keke/stores/auth_store.dart';
@@ -104,24 +105,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => VerifyOtpScreen(
-          emailOrPhone: _emailController.text.trim(),
-          onVerified: () {
-            // Handle successful verification
-            _firstNameController.clear();
-            _lastNameController.clear();
-            _emailController.clear();
-            _phoneController.clear();
-            _passwordController.clear();
-            _confirmPasswordController.clear();
-
-            // Show success message
-            _showSuccess('Account created successfully!');
-
-            // TODO: Navigate to home/dashboard screen
-            // Example: Navigator.pushReplacementNamed(context, '/home');
-          },
-        ),
+        builder: (context) => HomeScreen()
       ),
     );
   }

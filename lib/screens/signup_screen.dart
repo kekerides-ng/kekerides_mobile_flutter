@@ -6,7 +6,8 @@ import 'package:keke/screens/verify_otp_screen.dart';
 import 'package:keke/stores/auth_store.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
-  const SignupScreen({super.key});
+  final String role;
+  const SignupScreen({super.key, this.role = 'passenger'});
 
   @override
   ConsumerState<SignupScreen> createState() => _SignupScreenState();
@@ -87,7 +88,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         password: _passwordController.text,
         confirmPassword: _confirmPasswordController.text,
         acceptTerms: _acceptTerms,
-        role: 'passenger',
+        role: widget.role,
       );
 
       if (result['success'] == true) {
@@ -105,7 +106,16 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => HomeScreen()
+        builder: (context) => VerifyOtpScreen(
+          emailOrPhone: _emailController.text.trim(),
+          onVerified: () {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const HomeScreen()),
+              (route) => false,
+            );
+          },
+        ),
       ),
     );
   }
@@ -120,20 +130,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     );
   }
 
-  void _showSuccess(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
     final isLoading = authState.isLoading;
+    final displayRole = widget.role == 'driver' ? 'Driver!' : 'Traveler!';
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -148,262 +149,237 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              children: [
-                RichText(
-                  text: TextSpan(
-                    children: [
-                      TextSpan(
-                        text: 'Hello ',
-                        style: TextStyle(
-                          color: const Color(0xFF3B3B3B),
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      TextSpan(
-                        text: 'Traveler!',
-                        style: TextStyle(
-                          color: Theme.of(context).primaryColor,
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                // First Name and Last Name Fields (Side by Side)
-                Row(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              RichText(
+                text: TextSpan(
                   children: [
-                    // First Name Field
-                    Expanded(
-                      child: _buildBottomBorderTextField(
-                        controller: _firstNameController,
-                        labelText: 'First Name',
-                        hintText: 'First name',
-                        keyboardType: TextInputType.name,
-                        prefixIcon: Icons.person_outline,
+                    TextSpan(
+                      text: 'Hello ',
+                      style: TextStyle(
+                        color: const Color(0xFF3B3B3B),
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    // Last Name Field
-                    Expanded(
-                      child: _buildBottomBorderTextField(
-                        controller: _lastNameController,
-                        labelText: 'Last Name',
-                        hintText: 'Last name',
-                        keyboardType: TextInputType.name,
-                        prefixIcon: null, // No icon for last name to save space
+                    TextSpan(
+                      text: displayRole,
+                      style: TextStyle(
+                        color: Theme.of(context).primaryColor,
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 18),
+              ),
+              const SizedBox(height: 32),
 
-                // Email Field
-                _buildBottomBorderTextField(
-                  controller: _emailController,
-                  labelText: 'Email Address',
-                  hintText: 'Enter your email',
-                  keyboardType: TextInputType.emailAddress,
-                  prefixIcon: Icons.email_outlined,
-                ),
-                const SizedBox(height: 18),
-
-                // Phone Number Field
-                _buildBottomBorderTextField(
-                  controller: _phoneController,
-                  labelText: 'Phone Number',
-                  hintText: 'Enter your phone number',
-                  keyboardType: TextInputType.phone,
-                  prefixIcon: Icons.phone_outlined,
-                ),
-                const SizedBox(height: 18),
-
-                // Password Field
-                _buildBottomBorderTextField(
-                  controller: _passwordController,
-                  labelText: 'Password',
-                  hintText: 'Create a password',
-                  obscureText: !_isPasswordVisible,
-                  prefixIcon: Icons.lock_outline,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _isPasswordVisible
-                          ? Icons.visibility_off_outlined
-                          : Icons.visibility_outlined,
-                      color: const Color(0xFF9CA3AF),
+              // First Name and Last Name Fields (Side by Side)
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildTextField(
+                      controller: _firstNameController,
+                      label: 'First Name',
+                      hint: 'First name',
+                      icon: Icons.person_outline,
                     ),
-                    onPressed: () {
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildTextField(
+                      controller: _lastNameController,
+                      label: 'Last Name',
+                      hint: 'Last name',
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+
+              _buildTextField(
+                controller: _emailController,
+                label: 'Email Address',
+                hint: 'Enter your email',
+                inputType: TextInputType.emailAddress,
+                icon: Icons.email_outlined,
+              ),
+              const SizedBox(height: 18),
+
+              _buildTextField(
+                controller: _phoneController,
+                label: 'Phone Number',
+                hint: 'Enter your phone number',
+                inputType: TextInputType.phone,
+                icon: Icons.phone_outlined,
+              ),
+              const SizedBox(height: 18),
+
+              _buildTextField(
+                controller: _passwordController,
+                label: 'Password',
+                hint: 'Create a password',
+                isPassword: true,
+                isVisible: _isPasswordVisible,
+                onVisibilityChanged: () {
+                  setState(() {
+                    _isPasswordVisible = !_isPasswordVisible;
+                  });
+                },
+                icon: Icons.lock_outline,
+              ),
+              const SizedBox(height: 18),
+
+              _buildTextField(
+                controller: _confirmPasswordController,
+                label: 'Confirm Password',
+                hint: 'Re-enter your password',
+                isPassword: true,
+                isVisible: _isConfirmPasswordVisible,
+                onVisibilityChanged: () {
+                  setState(() {
+                    _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                  });
+                },
+                icon: Icons.lock_outline,
+              ),
+              const SizedBox(height: 24),
+
+              // Accept Terms Checkbox
+              Row(
+                children: [
+                  Checkbox(
+                    value: _acceptTerms,
+                    onChanged: (value) {
                       setState(() {
-                        _isPasswordVisible = !_isPasswordVisible;
+                        _acceptTerms = value ?? false;
                       });
                     },
+                    activeColor: Theme.of(context).primaryColor,
                   ),
-                ),
-                const SizedBox(height: 18),
-
-                // Confirm Password Field
-                _buildBottomBorderTextField(
-                  controller: _confirmPasswordController,
-                  labelText: 'Confirm Password',
-                  hintText: 'Re-enter your password',
-                  obscureText: !_isConfirmPasswordVisible,
-                  prefixIcon: Icons.lock_outline,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _isConfirmPasswordVisible
-                          ? Icons.visibility_off_outlined
-                          : Icons.visibility_outlined,
-                      color: const Color(0xFF9CA3AF),
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
-                      });
-                    },
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Accept Terms Checkbox
-                Row(
-                  children: [
-                    Checkbox(
-                      value: _acceptTerms,
-                      onChanged: (value) {
-                        setState(() {
-                          _acceptTerms = value ?? false;
-                        });
-                      },
-                      activeColor: Theme.of(context).primaryColor,
-                    ),
-                    const Expanded(
-                      child: Text(
-                        'I agree to the terms and conditions',
-                        style: TextStyle(
-                          color: Color(0xFF6B7280),
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // Sign Up Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: isLoading ? null : _signup,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).primaryColor,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: isLoading
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : const Text(
-                            'Create Account',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                  ),
-                ),
-
-                // Show error message from auth store if any
-                if (authState.errorMessage != null &&
-                    authState.errorMessage!.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 16),
+                  const Expanded(
                     child: Text(
-                      authState.errorMessage!,
-                      style: const TextStyle(
-                        color: Colors.red,
-                        fontSize: 14,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-
-                const SizedBox(height: 12),
-
-                // Already have account link
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      "Already have an account?",
+                      'I agree to the terms and conditions',
                       style: TextStyle(
                         color: Color(0xFF6B7280),
                         fontSize: 14,
                       ),
                     ),
-                    TextButton(
-                      onPressed: isLoading
-                          ? null
-                          : () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const LoginScreen(),
-                                ),
-                              ),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.only(left: 8),
-                        minimumSize: Size.zero,
-                      ),
-                      child: const Text(
-                        'Sign In',
-                        style: TextStyle(
-                          color: Color(0xFFBF5102),
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // Sign Up Button
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: isLoading ? null : _signup,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFBF5102),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: isLoading
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          'Create Account',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
+                ),
+              ),
+
+              if (authState.errorMessage != null &&
+                  authState.errorMessage!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Text(
+                    authState.errorMessage!,
+                    style: const TextStyle(
+                      color: Colors.red,
+                      fontSize: 14,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+
+              const SizedBox(height: 12),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    "Already have an account?",
+                    style: TextStyle(
+                      color: Color(0xFF6B7280),
+                      fontSize: 14,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: isLoading
+                        ? null
+                        : () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const LoginScreen(),
+                              ),
+                            ),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.only(left: 8),
+                      minimumSize: Size.zero,
+                    ),
+                    child: const Text(
+                      'Sign In',
+                      style: TextStyle(
+                        color: Color(0xFFBF5102),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-              ],
-            ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildBottomBorderTextField({
+  Widget _buildTextField({
     required TextEditingController controller,
-    required String labelText,
-    required String hintText,
-    TextInputType keyboardType = TextInputType.text,
-    bool obscureText = false,
-    IconData? prefixIcon,
-    Widget? suffixIcon,
+    required String label,
+    required String hint,
+    TextInputType inputType = TextInputType.text,
+    bool isPassword = false,
+    bool isVisible = false,
+    VoidCallback? onVisibilityChanged,
+    IconData? icon,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          labelText,
+          label,
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
@@ -422,11 +398,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           ),
           child: Row(
             children: [
-              if (prefixIcon != null)
+              if (icon != null)
                 Padding(
                   padding: const EdgeInsets.only(right: 12),
                   child: Icon(
-                    prefixIcon,
+                    icon,
                     color: const Color(0xFF9CA3AF),
                     size: 20,
                   ),
@@ -434,14 +410,14 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               Expanded(
                 child: TextField(
                   controller: controller,
-                  obscureText: obscureText,
-                  keyboardType: keyboardType,
+                  obscureText: isPassword && !isVisible,
+                  keyboardType: inputType,
                   style: const TextStyle(
                     fontSize: 16,
                     color: Color(0xFF111827),
                   ),
                   decoration: InputDecoration(
-                    hintText: hintText,
+                    hintText: hint,
                     hintStyle: TextStyle(
                       color: Colors.grey.shade500,
                       fontSize: 16,
@@ -451,7 +427,16 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   ),
                 ),
               ),
-              if (suffixIcon != null) suffixIcon,
+              if (isPassword)
+                IconButton(
+                  icon: Icon(
+                    isVisible
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: const Color(0xFF9CA3AF),
+                  ),
+                  onPressed: onVisibilityChanged,
+                ),
             ],
           ),
         ),

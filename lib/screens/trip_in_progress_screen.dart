@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:keke/screens/chat_screen.dart';
+import 'package:keke/screens/home_screen.dart';
+import 'package:keke/screens/rating_screen.dart';
 
 class TripInProgressScreen extends StatelessWidget {
   const TripInProgressScreen({super.key});
@@ -44,13 +47,13 @@ class TripInProgressScreen extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Column(
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('DESTINATION', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                      Text('Lagos City Mall', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24)),
+                      const Text('DESTINATION', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                      const Text('Lagos City Mall', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24)),
                       Row(
-                        children: [
+                        children: const [
                           Chip(
                             label: Text('On Time', style: TextStyle(color: Colors.white)),
                             backgroundColor: Colors.green,
@@ -86,7 +89,7 @@ class TripInProgressScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8.0),
-              const LinearProgressIndicator(value: 0.7, minHeight: 6),
+              const LinearProgressIndicator(value: 0.7, minHeight: 6, color: Color(0xFFBF5102), backgroundColor: Colors.orangeAccent),
                const SizedBox(height: 8.0),
               const Text('3.4 km remaining', style: TextStyle(color: Colors.grey)),
               const SizedBox(height: 24.0),
@@ -117,8 +120,16 @@ class TripInProgressScreen extends StatelessWidget {
                      ),
                      Row(
                        children: [
-                         IconButton(onPressed: (){}, icon: const Icon(Icons.call)),
-                         IconButton(onPressed: (){}, icon: const Icon(Icons.message)),
+                         IconButton(onPressed: (){}, icon: const Icon(Icons.call, color: Color(0xFFBF5102))),
+                         IconButton(
+                           onPressed: (){
+                             Navigator.push(
+                               context,
+                               MaterialPageRoute(builder: (context) => const ChatScreen(driverName: 'Emmanuel O.')),
+                             );
+                           }, 
+                           icon: const Icon(Icons.message, color: Color(0xFFBF5102))
+                         ),
                        ],
                      )
                    ],
@@ -131,11 +142,25 @@ class TripInProgressScreen extends StatelessWidget {
                   _buildActionButton(icon: Icons.share, label: 'Share'),
                   _buildActionButton(icon: Icons.shield, label: 'Safety'),
                   ElevatedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.warning, color: Colors.red),
-                    label: const Text('SOS Emergency', style: TextStyle(color: Colors.red)),
+                    onPressed: () {
+                      // End trip simulation
+                      Navigator.pushAndRemoveUntil(
+                          context, 
+                          MaterialPageRoute(builder: (_) => const HomeScreen()), 
+                          (route) => false
+                      );
+                      // Show rating screen
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (context) => const RatingScreen(driverName: 'Emmanuel O.'),
+                      );
+                    },
+                    icon: const Icon(Icons.check, color: Colors.white),
+                    label: const Text('End Trip', style: TextStyle(color: Colors.white)),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red[50],
+                      backgroundColor: const Color(0xFFBF5102),
                       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12.0),

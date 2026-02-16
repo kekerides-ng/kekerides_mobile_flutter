@@ -20,14 +20,12 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
   void _continue() {
     if (_selectedIndex == null) return;
 
-    // TODO: Navigate to next screen based on selection
     final role = _selectedIndex == 0 ? 'passenger' : 'driver';
-    print('Selected role: $role');
 
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const SignupScreen(),
+        builder: (context) => SignupScreen(role: role),
       ),
     );
   }

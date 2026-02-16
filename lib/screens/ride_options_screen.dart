@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:keke/screens/searching_for_driver_screen.dart';
+import 'package:keke/screens/wallet_screen.dart';
 
 class RideOptionsScreen extends StatefulWidget {
   const RideOptionsScreen({super.key});
@@ -75,13 +76,20 @@ class _RideOptionsScreenState extends State<RideOptionsScreen> {
               ),
               const SizedBox(height: 24.0),
               ListTile(
-                leading: const Icon(Icons.account_balance_wallet, color: Colors.green),
+                leading: const Icon(Icons.account_balance_wallet, color: Color(0xFFBF5102)),
                 title: const Text('Payment Method'),
-                subtitle: const Text('Cash'),
-                trailing: const Icon(Icons.arrow_forward_ios),
-                onTap: () {},
+                subtitle: const Text('Wallet (₦12,500)'),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                contentPadding: EdgeInsets.zero,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const WalletScreen()),
+                  );
+                },
               ),
-              const SizedBox(height: 24.0),
+              const Divider(),
+              const SizedBox(height: 16.0),
               ElevatedButton(
                 onPressed: () {
                    Navigator.pop(context); // Close the ride options sheet
@@ -131,7 +139,7 @@ class _RideOptionsScreenState extends State<RideOptionsScreen> {
         ),
         child: Row(
           children: [
-            Icon(icon, size: 40),
+            Icon(icon, size: 40, color: Colors.black87),
             const SizedBox(width: 16.0),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -140,9 +148,13 @@ class _RideOptionsScreenState extends State<RideOptionsScreen> {
                 const SizedBox(height: 4.0),
                 Row(
                   children: [
-                    const Icon(Icons.person, size: 16.0, color: Colors.grey),
+                    const Icon(Icons.access_time, size: 14.0, color: Colors.grey),
                     const SizedBox(width: 4.0),
-                    Text(time, style: const TextStyle(color: Colors.grey)),
+                    Text(time, style: const TextStyle(color: Colors.grey, fontSize: 12.0)),
+                    const SizedBox(width: 8.0),
+                     const Icon(Icons.person, size: 14.0, color: Colors.grey),
+                     const SizedBox(width: 2.0),
+                     const Text('1-2', style: TextStyle(color: Colors.grey, fontSize: 12.0)),
                   ],
                 ),
               ],
@@ -154,12 +166,13 @@ class _RideOptionsScreenState extends State<RideOptionsScreen> {
                 Text(price, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0)),
                 if (tag != null)
                   Container(
+                    margin: const EdgeInsets.only(top: 4.0),
                     padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.0),
                     decoration: BoxDecoration(
                       color: Colors.green[100],
                       borderRadius: BorderRadius.circular(8.0),
                     ),
-                    child: Text(tag, style: TextStyle(color: Colors.green[800], fontSize: 12.0)),
+                    child: Text(tag, style: TextStyle(color: Colors.green[800], fontSize: 10.0)),
                   ),
               ],
             ),

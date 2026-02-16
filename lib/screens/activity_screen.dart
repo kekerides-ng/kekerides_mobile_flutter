@@ -11,6 +11,7 @@ class ActivityScreen extends StatelessWidget {
         title: const Text('My Activity'),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
+        automaticallyImplyLeading: false,
         elevation: 0,
         centerTitle: true,
       ),

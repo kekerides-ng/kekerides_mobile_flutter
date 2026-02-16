@@ -11,6 +11,7 @@ class WalletScreen extends StatelessWidget {
         title: const Text('Wallet'),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
+        automaticallyImplyLeading: false,
         elevation: 0,
         centerTitle: true,
       ),

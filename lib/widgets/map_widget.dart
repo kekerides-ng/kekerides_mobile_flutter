@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
@@ -14,6 +15,7 @@ class _MapWidgetState extends State<MapWidget> {
   GoogleMapController? _mapController;
   LocationData? _currentLocation;
   final Location _location = Location();
+  StreamSubscription<LocationData>? _locationSubscription;
 
   @override
   void initState() {
@@ -21,27 +23,39 @@ class _MapWidgetState extends State<MapWidget> {
     _requestLocationPermission();
   }
 
+  @override
+  void dispose() {
+    _locationSubscription?.cancel();
+    _mapController?.dispose();
+    super.dispose();
+  }
+
   void _requestLocationPermission() async {
     bool serviceEnabled;
     PermissionStatus permissionGranted;
 
     serviceEnabled = await _location.serviceEnabled();
+    if (!mounted) return;
     if (!serviceEnabled) {
       serviceEnabled = await _location.requestService();
+      if (!mounted) return;
       if (!serviceEnabled) {
         return;
       }
     }
 
     permissionGranted = await _location.hasPermission();
+    if (!mounted) return;
     if (permissionGranted == PermissionStatus.denied) {
       permissionGranted = await _location.requestPermission();
+      if (!mounted) return;
       if (permissionGranted != PermissionStatus.granted) {
         return;
       }
     }
 
-    _location.onLocationChanged.listen((LocationData currentLocation) {
+    _locationSubscription = _location.onLocationChanged.listen((LocationData currentLocation) {
+      if (!mounted) return;
       setState(() {
         _currentLocation = currentLocation;
         _updateMarker();
@@ -51,16 +65,14 @@ class _MapWidgetState extends State<MapWidget> {
 
   void _updateMarker() {
     if (_currentLocation != null) {
-      setState(() {
-        _markers.clear();
-        _markers.add(
-          Marker(
-            markerId: const MarkerId('current_location'),
-            position: LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
-            infoWindow: const InfoWindow(title: 'My Location'),
-          ),
-        );
-      });
+      _markers.clear();
+      _markers.add(
+        Marker(
+          markerId: const MarkerId('current_location'),
+          position: LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
+          infoWindow: const InfoWindow(title: 'My Location'),
+        ),
+      );
     }
   }
 

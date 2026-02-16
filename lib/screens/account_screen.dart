@@ -11,6 +11,7 @@ class AccountScreen extends StatelessWidget {
         title: const Text('Account'),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
+        automaticallyImplyLeading: false,
         elevation: 0,
         centerTitle: true,
       ),

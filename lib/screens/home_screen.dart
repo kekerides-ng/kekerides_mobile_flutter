@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:keke/app_config.dart';
+import 'package:keke/screens/driver_account_screen.dart';
 import 'package:keke/screens/driver_ratings_screen.dart';
 import 'package:keke/screens/driver_earnings_screen.dart';
 import 'package:keke/screens/account_screen.dart';
@@ -38,7 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
           isPassenger ? _buildPassengerHomeTab() : _buildDriverHomeTab(),
           isPassenger ? const ActivityScreen() : const DriverEarningsScreen(),
           isPassenger ? const WalletScreen() : const DriverRatingsScreen(),
-          const AccountScreen(),
+          isPassenger ? const AccountScreen() : const DriverAccountScreen(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(

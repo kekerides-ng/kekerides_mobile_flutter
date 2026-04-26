@@ -30,6 +30,20 @@ android {
         versionName = flutter.versionName
     }
 
+    flavorDimensions += "app"
+    productFlavors {
+        create("passenger") {
+            dimension = "app"
+            applicationId = "com.example.keke.passenger"
+            resValue("string", "app_name", "Keke Passenger")
+        }
+        create("driver") {
+            dimension = "app"
+            applicationId = "com.example.keke.driver"
+            resValue("string", "app_name", "Keke Driver")
+        }
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.

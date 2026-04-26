@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:keke/app_config.dart';
 
 class AccountScreen extends StatelessWidget {
   const AccountScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final isPassenger = AppConfig.instance.isPassenger;
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
@@ -59,9 +62,9 @@ class AccountScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Adewale O.',
-                        style: TextStyle(
+                      Text(
+                        isPassenger ? 'Adewale O.' : 'Adewale Driver',
+                        style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
@@ -88,7 +91,8 @@ class AccountScreen extends StatelessWidget {
                               color: Colors.grey[200],
                               borderRadius: BorderRadius.circular(4.0),
                             ),
-                            child: const Text('Silver Member', style: TextStyle(fontSize: 10)),
+                            child: Text(isPassenger ? 'Silver Member' : 'Top Driver', 
+                              style: const TextStyle(fontSize: 10)),
                           ),
                         ],
                       ),
@@ -100,24 +104,39 @@ class AccountScreen extends StatelessWidget {
           ),
           
           const SizedBox(height: 32.0),
-          const Text(
-            'Saved Places',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Text(
+            isPassenger ? 'Saved Places' : 'Vehicle & Documents',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16.0),
           
-          _buildSettingsTile(
-            icon: Icons.home,
-            title: 'Home',
-            subtitle: '142 Ahmadu Bello Way',
-            trailing: IconButton(icon: const Icon(Icons.edit, size: 18), onPressed: () {}),
-          ),
-          _buildSettingsTile(
-            icon: Icons.work,
-            title: 'Work',
-            subtitle: 'Landmark Centre',
-            trailing: IconButton(icon: const Icon(Icons.edit, size: 18), onPressed: () {}),
-          ),
+          if (isPassenger) ...[
+            _buildSettingsTile(
+              icon: Icons.home,
+              title: 'Home',
+              subtitle: '142 Ahmadu Bello Way',
+              trailing: IconButton(icon: const Icon(Icons.edit, size: 18), onPressed: () {}),
+            ),
+            _buildSettingsTile(
+              icon: Icons.work,
+              title: 'Work',
+              subtitle: 'Landmark Centre',
+              trailing: IconButton(icon: const Icon(Icons.edit, size: 18), onPressed: () {}),
+            ),
+          ] else ...[
+            _buildSettingsTile(
+              icon: Icons.electric_rickshaw,
+              title: 'Vehicle Details',
+              subtitle: 'Keke Napep - ABC-123-XY',
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+            ),
+            _buildSettingsTile(
+              icon: Icons.assignment,
+              title: 'Documents',
+              subtitle: 'License, Insurance, ID',
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+            ),
+          ],
           
           const SizedBox(height: 32.0),
           const Text(

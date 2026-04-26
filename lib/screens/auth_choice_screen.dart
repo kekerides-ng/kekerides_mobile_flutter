@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:keke/app_config.dart';
+import 'package:keke/screens/signup_screen.dart';
 import 'package:keke/screens/login_screen.dart';
-import 'package:keke/screens/role_selection_screen.dart';
 
 class AuthChoiceScreen extends StatelessWidget {
   const AuthChoiceScreen({Key? key}) : super(key: key);
@@ -211,7 +212,9 @@ class AuthChoiceScreen extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const RoleSelectionScreen(),
+                              builder: (context) => SignupScreen(
+                                role: AppConfig.instance.role.name,
+                              ),
                             ),
                           );
                         },

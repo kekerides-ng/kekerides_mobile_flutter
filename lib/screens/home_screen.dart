@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:keke/app_config.dart';
+import 'package:keke/screens/driver_ratings_screen.dart';
+import 'package:keke/screens/driver_earnings_screen.dart';
 import 'package:keke/screens/account_screen.dart';
 import 'package:keke/screens/activity_screen.dart';
 import 'package:keke/screens/destination_search_screen.dart';
+import 'package:keke/screens/incoming_request_screen.dart';
 import 'package:keke/screens/ride_options_screen.dart';
 import 'package:keke/screens/wallet_screen.dart';
 import 'package:keke/widgets/map_widget.dart';
@@ -25,13 +29,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isPassenger = AppConfig.instance.isPassenger;
+
     return Scaffold(
       body: IndexedStack(
         index: _selectedIndex,
         children: [
-          _buildHomeTab(),
-          const ActivityScreen(),
-          const WalletScreen(),
+          isPassenger ? _buildPassengerHomeTab() : _buildDriverHomeTab(),
+          isPassenger ? const ActivityScreen() : const DriverEarningsScreen(),
+          isPassenger ? const WalletScreen() : const DriverRatingsScreen(),
           const AccountScreen(),
         ],
       ),
@@ -42,29 +48,203 @@ class _HomeScreenState extends State<HomeScreen> {
         unselectedItemColor: Colors.grey,
         showUnselectedLabels: true,
         type: BottomNavigationBarType.fixed,
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.map),
-            label: 'Home',
+            icon: const Icon(Icons.explore),
+            label: isPassenger ? 'Home' : 'HOME',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: 'Activity',
+            icon: Icon(isPassenger ? Icons.history : Icons.account_balance_wallet),
+            label: isPassenger ? 'Activity' : 'EARNINGS',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.account_balance_wallet),
-            label: 'Wallet',
+            icon: Icon(isPassenger ? Icons.account_balance_wallet : Icons.star),
+            label: isPassenger ? 'Wallet' : 'RATINGS',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.person),
-            label: 'Account',
+            label: 'ACCOUNT',
           ),
         ],
       ),
     );
   }
 
-  Widget _buildHomeTab() {
+  Widget _buildDriverHomeTab() {
+    return Stack(
+      children: [
+        MapWidget(key: _mapKey),
+        
+        // Top Section
+        SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: Column(
+              children: [
+                // Profile & Notification Card
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      const CircleAvatar(
+                        radius: 18,
+                        backgroundImage: AssetImage('images/driver_profile.png'),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Text(
+                              'THE RESILIENT',
+                              style: TextStyle(
+                                color: Color(0xFFBF5102),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            Text(
+                              'NAVIGATOR',
+                              style: TextStyle(
+                                color: Color(0xFFBF5102),
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.notifications, color: Color(0xFFBF5102), size: 24),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                
+                // Earnings Card
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "TODAY'S EARNINGS",
+                        style: TextStyle(
+                          color: Colors.grey[400],
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Text(
+                            "₦ 45,200",
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.blue,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Text(
+                              "Online",
+                              style: TextStyle(color: Colors.white, fontSize: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // Go Offline Button
+        Positioned(
+          bottom: 30,
+          left: 20,
+          right: 20,
+          child: Column(
+            children: [
+              Align(
+                alignment: Alignment.centerRight,
+                child: FloatingActionButton(
+                  onPressed: () {},
+                  backgroundColor: Colors.white,
+                  child: const Icon(Icons.my_location, color: Colors.black),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 60,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    // Logic for incoming request simulation (for testing)
+                    _simulateIncomingRequest();
+                  },
+                  icon: const Icon(Icons.power_settings_new),
+                  label: const Text(
+                    "GO OFFLINE",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFBF5102),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _simulateIncomingRequest() {
+    // This will be replaced by actual logic later
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const IncomingRequestScreen(),
+    );
+  }
+
+  Widget _buildPassengerHomeTab() {
     return Stack(
       children: [
         // Map Widget

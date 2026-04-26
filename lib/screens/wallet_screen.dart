@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:keke/app_config.dart';
 
 class WalletScreen extends StatelessWidget {
   const WalletScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final isPassenger = AppConfig.instance.isPassenger;
+    
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
@@ -42,9 +45,9 @@ class WalletScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Total Balance',
-                    style: TextStyle(
+                  Text(
+                    isPassenger ? 'Total Balance' : 'Total Earnings',
+                    style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 16.0,
                     ),
@@ -64,10 +67,14 @@ class WalletScreen extends StatelessWidget {
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () {
-                            _showInterswitchFundingSheet(context);
+                            if (isPassenger) {
+                              _showInterswitchFundingSheet(context);
+                            } else {
+                              // TODO: Show withdrawal sheet
+                            }
                           },
-                          icon: const Icon(Icons.add),
-                          label: const Text('Top Up'),
+                          icon: Icon(isPassenger ? Icons.add : Icons.account_balance),
+                          label: Text(isPassenger ? 'Top Up' : 'Withdraw'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
                             foregroundColor: const Color(0xFFBF5102),
@@ -99,13 +106,13 @@ class WalletScreen extends StatelessWidget {
             
             const SizedBox(height: 32.0),
             
-            const Text(
-              'Payment Methods',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Text(
+              isPassenger ? 'Payment Methods' : 'Payout Methods',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16.0),
             
-            // Interswitch Card Item
+            // Interswitch Card Item (or Bank Account for Driver)
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -123,13 +130,13 @@ class WalletScreen extends StatelessWidget {
                   width: 50,
                   height: 35,
                   decoration: BoxDecoration(
-                    color: Colors.blue[900], // Interswitch Blue-ish
+                    color: isPassenger ? Colors.blue[900] : Colors.green[800],
                     borderRadius: BorderRadius.circular(4.0),
                   ),
-                  child: const Center(
+                  child: Center(
                     child: Text(
-                      'VERVE',
-                      style: TextStyle(
+                      isPassenger ? 'VERVE' : 'BANK',
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 10,
@@ -137,18 +144,18 @@ class WalletScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                title: const Text('**** **** **** 4231'),
-                subtitle: const Text('Expires 12/25'),
+                title: Text(isPassenger ? '**** **** **** 4231' : 'First Bank - 302...123'),
+                subtitle: Text(isPassenger ? 'Expires 12/25' : 'Adewale Driver'),
                 trailing: Radio(value: true, groupValue: true, onChanged: (v) {}, activeColor: const Color(0xFFBF5102)),
               ),
             ),
             
             const SizedBox(height: 16.0),
             
-            // Add New Card
+            // Add New Method
             GestureDetector(
               onTap: () {
-                 _showInterswitchFundingSheet(context);
+                 if (isPassenger) _showInterswitchFundingSheet(context);
               },
               child: Container(
                 padding: const EdgeInsets.all(16.0),
@@ -158,12 +165,12 @@ class WalletScreen extends StatelessWidget {
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(Icons.add_circle_outline, color: Color(0xFFBF5102)),
-                    SizedBox(width: 8.0),
+                  children: [
+                    const Icon(Icons.add_circle_outline, color: Color(0xFFBF5102)),
+                    const SizedBox(width: 8.0),
                     Text(
-                      'Add New Card',
-                      style: TextStyle(
+                      isPassenger ? 'Add New Card' : 'Add Bank Account',
+                      style: const TextStyle(
                         color: Color(0xFFBF5102),
                         fontWeight: FontWeight.bold,
                       ),
@@ -186,6 +193,20 @@ class WalletScreen extends StatelessWidget {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: 3,
               itemBuilder: (context, index) {
+                String label;
+                String amount;
+                bool isPositive;
+
+                if (isPassenger) {
+                  label = index == 0 ? 'Ride Payment' : 'Wallet Top Up';
+                  amount = index == 0 ? '- ₦500.00' : '+ ₦2,000.00';
+                  isPositive = index != 0;
+                } else {
+                  label = index == 0 ? 'Trip #2341 Earnings' : 'Withdrawal';
+                  amount = index == 0 ? '+ ₦1,200.00' : '- ₦5,000.00';
+                  isPositive = index == 0;
+                }
+
                 return Card(
                   elevation: 0,
                   margin: const EdgeInsets.only(bottom: 12.0),
@@ -195,19 +216,19 @@ class WalletScreen extends StatelessWidget {
                   ),
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: index == 0 ? Colors.red[50] : Colors.green[50],
+                      backgroundColor: isPositive ? Colors.green[50] : Colors.red[50],
                       child: Icon(
-                        index == 0 ? Icons.arrow_upward : Icons.arrow_downward,
-                        color: index == 0 ? Colors.red : Colors.green,
+                        isPositive ? Icons.arrow_downward : Icons.arrow_upward,
+                        color: isPositive ? Colors.green : Colors.red,
                       ),
                     ),
-                    title: Text(index == 0 ? 'Ride Payment' : 'Wallet Top Up'),
+                    title: Text(label),
                     subtitle: Text(index == 0 ? 'Yesterday, 4:30 PM' : 'Today, 9:00 AM'),
                     trailing: Text(
-                      index == 0 ? '- ₦500.00' : '+ ₦2,000.00',
+                      amount,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: index == 0 ? Colors.red : Colors.green,
+                        color: isPositive ? Colors.green : Colors.red,
                         fontSize: 16.0,
                       ),
                     ),

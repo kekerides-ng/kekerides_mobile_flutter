@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:keke/app_config.dart';
 
 class ActivityScreen extends StatelessWidget {
   const ActivityScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final isPassenger = AppConfig.instance.isPassenger;
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('My Activity'),
+        title: Text(isPassenger ? 'My Activity' : 'Trip History'),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         automaticallyImplyLeading: false,
@@ -114,7 +117,7 @@ class ActivityScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 4.0),
                         Text(
-                          'Wallet',
+                          isPassenger ? 'Wallet' : 'Earnings',
                           style: TextStyle(
                             color: Colors.grey[600],
                             fontSize: 12.0,
@@ -134,22 +137,22 @@ class ActivityScreen extends StatelessWidget {
                         child: Icon(Icons.person, size: 16, color: Colors.white),
                       ),
                       const SizedBox(width: 8.0),
-                      const Text(
-                        'Emmanuel O.',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      Text(
+                        isPassenger ? 'Emmanuel O.' : 'Sarah J.',
+                        style: const TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                       const Spacer(),
-                      // Re-book button
+                      // Re-book or Details button
                       InkWell(
                         onTap: () {},
                         child: Row(
-                          children: const [
-                            Icon(Icons.refresh,
-                                size: 14, color: Color(0xFFBF5102)),
-                            SizedBox(width: 4),
+                          children: [
+                            Icon(isPassenger ? Icons.refresh : Icons.info_outline,
+                                size: 14, color: const Color(0xFFBF5102)),
+                            const SizedBox(width: 4),
                             Text(
-                              'Re-book',
-                              style: TextStyle(
+                              isPassenger ? 'Re-book' : 'Details',
+                              style: const TextStyle(
                                 color: Color(0xFFBF5102),
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,

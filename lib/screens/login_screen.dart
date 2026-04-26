@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:keke/app_config.dart';
+import 'package:keke/screens/signup_screen.dart';
 import 'package:keke/screens/home_screen.dart';
-import 'package:keke/screens/role_selection_screen.dart';
 import 'package:keke/screens/verify_otp_screen.dart';
 import 'package:keke/stores/auth_store.dart';
 
@@ -366,8 +367,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) =>
-                                      const RoleSelectionScreen(),
+                                  builder: (context) => SignupScreen(
+                                    role: AppConfig.instance.role.name,
+                                  ),
                                 ),
                               );
                             },

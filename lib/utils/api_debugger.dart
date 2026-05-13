@@ -76,10 +76,10 @@ class ApiDebugger {
       try {
         // Try common endpoints with different methods
         final endpoints = [
-          {'path': '/health', 'method': 'GET'},
-          {'path': '/', 'method': 'GET'},
-          {'path': '/auth/status', 'method': 'GET'},
-          {'path': '/auth/test', 'method': 'GET'},
+          {'path': 'health', 'method': 'GET'},
+          {'path': '', 'method': 'GET'},
+          {'path': 'auth/status', 'method': 'GET'},
+          {'path': 'auth/test', 'method': 'GET'},
         ];
 
         bool endpointFound = false;
@@ -129,9 +129,9 @@ class ApiDebugger {
         if (!endpointFound) {
           // Try a simple POST to test if it's a method issue
           try {
-            print('Trying simple POST to /auth/register...');
+            print('Trying simple POST to auth/register...');
             final response = await dio.post(
-              '${Constants.baseUrl}/auth/register',
+              '${Constants.baseUrl}auth/register',
               data: {
                 'test': 'test',
               },

@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:keke/app_config.dart';
+import 'package:keke/screens/auth_choice_screen.dart';
+import 'package:keke/stores/auth_store.dart';
 
-class AccountScreen extends StatelessWidget {
+class AccountScreen extends ConsumerWidget {
   const AccountScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isPassenger = AppConfig.instance.isPassenger;
+    final authState = ref.watch(authNotifierProvider);
+    final user = authState.user;
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -63,7 +68,7 @@ class AccountScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isPassenger ? 'Adewale O.' : 'Adewale Driver',
+                        user?['name'] ?? (isPassenger ? 'User' : 'Driver'),
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -71,7 +76,7 @@ class AccountScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 4.0),
                       Text(
-                        'adewale@gmail.com',
+                        user?['email'] ?? '',
                         style: TextStyle(color: Colors.grey[600]),
                       ),
                       const SizedBox(height: 8.0),
@@ -79,9 +84,9 @@ class AccountScreen extends StatelessWidget {
                         children: [
                           Icon(Icons.star, size: 16, color: Colors.orange[400]),
                           const SizedBox(width: 4.0),
-                          const Text(
-                            '4.8',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                          Text(
+                            user?['ratingAverage']?.toString() ?? '4.8',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(width: 8.0),
                           Container(
@@ -173,8 +178,12 @@ class AccountScreen extends StatelessWidget {
           const SizedBox(height: 32.0),
           TextButton(
             onPressed: () {
-               // Log out logic
-               Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false); // assuming '/' is auth choice
+               ref.read(authNotifierProvider.notifier).logout();
+               Navigator.pushAndRemoveUntil(
+                 context, 
+                 MaterialPageRoute(builder: (context) => const AuthChoiceScreen()), 
+                 (route) => false
+               );
             },
             child: const Text(
               'Log Out',

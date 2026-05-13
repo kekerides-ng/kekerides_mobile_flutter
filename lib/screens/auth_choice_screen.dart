@@ -4,7 +4,7 @@ import 'package:keke/screens/signup_screen.dart';
 import 'package:keke/screens/login_screen.dart';
 
 class AuthChoiceScreen extends StatelessWidget {
-  const AuthChoiceScreen({Key? key}) : super(key: key);
+  const AuthChoiceScreen({super.key});
 
   // Helper to build white rounded buttons with left icon and centered text
   Widget _buildAuthButton({

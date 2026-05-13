@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:keke/screens/home_screen.dart';
 import 'package:keke/screens/login_screen.dart';
-import 'package:keke/screens/verify_otp_screen.dart';
 import 'package:keke/stores/auth_store.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
@@ -92,8 +91,14 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       );
 
       if (result['success'] == true) {
-        // Navigate to OTP screen
-        _navigateToOtpScreen();
+        // Navigate directly to Home screen (skipping OTP for now)
+        if (mounted) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const HomeScreen()),
+            (route) => false,
+          );
+        }
       } else {
         _showError(result['message'] ?? 'Signup failed');
       }
@@ -102,23 +107,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     }
   }
 
-  void _navigateToOtpScreen() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => VerifyOtpScreen(
-          emailOrPhone: _emailController.text.trim(),
-          onVerified: () {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const HomeScreen()),
-              (route) => false,
-            );
-          },
-        ),
-      ),
-    );
-  }
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(

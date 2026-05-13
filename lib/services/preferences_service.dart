@@ -8,6 +8,7 @@ class PreferencesService {
   static const String _userEmailKey = 'user_email';
   static const String _userNameKey = 'user_name';
   static const String _userPhoneKey = 'user_phone';
+  static const String _userDataKey = 'user_data';
 
   static late SharedPreferences _prefs;
 
@@ -71,6 +72,15 @@ class PreferencesService {
     return _prefs.getString(_userPhoneKey);
   }
 
+  // User Data (Full Object)
+  static Future<void> saveUserData(String userDataJson) async {
+    await _prefs.setString(_userDataKey, userDataJson);
+  }
+
+  static String? getUserData() {
+    return _prefs.getString(_userDataKey);
+  }
+
   // Clear all data
   static Future<void> clearAllData() async {
     await _prefs.clear();
@@ -82,5 +92,6 @@ class PreferencesService {
     await _prefs.remove(_userNameKey);
     await _prefs.remove(_userPhoneKey);
     await _prefs.remove(_userTypeKey);
+    await _prefs.remove(_userDataKey);
   }
 }

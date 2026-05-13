@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:keke/screens/auth_choice_screen.dart';
+import 'package:keke/stores/auth_store.dart';
 
-class DriverAccountScreen extends StatelessWidget {
+class DriverAccountScreen extends ConsumerWidget {
   const DriverAccountScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authNotifierProvider);
+    final user = authState.user;
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -78,16 +84,16 @@ class DriverAccountScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      'Amina Yusuf',
-                      style: TextStyle(
+                    Text(
+                      user?['name'] ?? 'Driver',
+                      style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Joined March 2022',
+                      user?['email'] ?? 'Joined March 2022',
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey[600],
@@ -140,9 +146,9 @@ class DriverAccountScreen extends StatelessWidget {
                         const Icon(Icons.star, color: Colors.white, size: 20),
                       ],
                     ),
-                    const Text(
-                      '4.96',
-                      style: TextStyle(
+                    Text(
+                      user?['ratingAverage']?.toString() ?? '4.96',
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 48,
                         fontWeight: FontWeight.bold,
@@ -151,7 +157,7 @@ class DriverAccountScreen extends StatelessWidget {
                     const SizedBox(height: 24),
                     Row(
                       children: [
-                        _buildStatItem('Total Trips', '1,248'),
+                        _buildStatItem('Total Trips', user?['totalRides']?.toString() ?? '1,248'),
                         const Spacer(),
                         _buildStatItem('Years Active', '2.5'),
                       ],
@@ -214,6 +220,27 @@ class DriverAccountScreen extends StatelessWidget {
               _buildActionTile(Icons.settings, 'App Settings'),
               const SizedBox(height: 12),
               _buildActionTile(Icons.notifications, 'Notifications'),
+              const SizedBox(height: 24),
+              Center(
+                child: TextButton(
+                  onPressed: () {
+                    ref.read(authNotifierProvider.notifier).logout();
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (context) => const AuthChoiceScreen()),
+                      (route) => false,
+                    );
+                  },
+                  child: const Text(
+                    'Log Out',
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
               const SizedBox(height: 40),
             ],
           ),

@@ -42,60 +42,60 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   // }
 
   Future<void> _login() async {
-    // if (!_validateFields()) return;
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
 
-    // final authStore = ref.read(authNotifierProvider.notifier);
+    if (email.isEmpty || password.isEmpty) {
+      _showError('Please enter both email and password');
+      return;
+    }
 
-    // try {
-    //   final result = await authStore.login(
-    //     email: _emailController.text.trim(),
-    //     password: _passwordController.text,
-    //   );
-    //
-    //   if (result['success'] == true) {
-    //     if (result['needs_verification'] == true) {
-    //       // Navigate to OTP screen for verification
-    //       _navigateToOtpScreen();
-    //     } else {
-    //       // User is already verified, navigate to home/dashboard
-    //       _navigateToHome();
-    //     }
-    //   } else {
-    //     _showError(result['message'] ?? 'Login failed');
-    //   }
-    // } catch (error) {
-    //   _showError('Login failed: $error');
-    // }
+    final authStore = ref.read(authNotifierProvider.notifier);
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const HomeScreen()),
+    final result = await authStore.login(
+      email: email,
+      password: password,
     );
+
+    if (!mounted) return;
+
+    if (result['success'] == true) {
+      if (result['needs_verification'] == true) {
+        _navigateToOtpScreen();
+      } else {
+        _navigateToHome();
+      }
+    } else {
+      _showError(result['message'] ?? 'Login failed');
+    }
   }
 
   void _navigateToOtpScreen() {
+    // For now, if OTP is not ready, we can just go home or show a message
+    // If you want to skip OTP here too:
+    _navigateToHome();
+    
+    /* 
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => VerifyOtpScreen(
           emailOrPhone: _emailController.text.trim(),
           onVerified: () {
-            // Handle successful verification
             _navigateToHome();
           },
         ),
       ),
     );
+    */
   }
 
   void _navigateToHome() {
-    // TODO: Navigate to home/dashboard screen
-    // Example: Navigator.pushReplacementNamed(context, '/home');
-
-    // For now, show success message and clear fields
-    _showSuccess('Login successful!');
-    _emailController.clear();
-    _passwordController.clear();
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const HomeScreen()),
+      (route) => false,
+    );
   }
 
   void _forgotPassword() {
@@ -286,18 +286,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
 
                 // Show error message from auth store if any
-                // if (authState.errorMessage != null && authState.errorMessage!.isNotEmpty)
-                //   Padding(
-                //     padding: const EdgeInsets.only(top: 16),
-                //     child: Text(
-                //       authState.errorMessage!,
-                //       style: const TextStyle(
-                //         color: Colors.red,
-                //         fontSize: 14,
-                //       ),
-                //       textAlign: TextAlign.center,
-                //     ),
-                //   ),
+                if (authState.errorMessage != null && authState.errorMessage!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: Text(
+                      authState.errorMessage!,
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontSize: 14,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
 
                 const SizedBox(height: 24),
 

@@ -55,6 +55,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final result = await authStore.login(
       email: email,
       password: password,
+      role: AppConfig.instance.role.name,
     );
 
     if (!mounted) return;
@@ -71,11 +72,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void _navigateToOtpScreen() {
-    // For now, if OTP is not ready, we can just go home or show a message
-    // If you want to skip OTP here too:
-    _navigateToHome();
-    
-    /* 
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -87,7 +83,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
       ),
     );
-    */
   }
 
   void _navigateToHome() {

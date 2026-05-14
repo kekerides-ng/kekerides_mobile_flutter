@@ -159,11 +159,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
           validateStatus: (status) => status != null && status < 500,
         ),
       );
-
-      print('📥 SIGNUP RESPONSE STATUS: ${response.statusCode}');
-      print('📥 RESPONSE DATA TYPE: ${response.data.runtimeType}');
-      print('📥 RESPONSE DATA: ${response.data}');
-
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = response.data as Map<String, dynamic>;
         print('✅ Signup successful');
@@ -214,10 +209,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
         };
       }
     } on DioException catch (e) {
-      print('❌ SIGNUP DIO ERROR: ${e.type}');
-      print('❌ Error message: ${e.message}');
-      print('❌ Response: ${e.response?.data}');
-      print('❌ Status: ${e.response?.statusCode}');
 
       String errorMessage = 'Signup failed';
       if (e.type == DioExceptionType.connectionTimeout) {
@@ -258,9 +249,126 @@ class AuthNotifier extends StateNotifier<AuthState> {
         'message': errorMessage,
       };
     } catch (e) {
-      print('❌ SIGNUP UNKNOWN ERROR: $e');
-      print('❌ Error type: ${e.runtimeType}');
 
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: e.toString(),
+      );
+      return {
+        'success': false,
+        'message': e.toString(),
+      };
+    }
+  }
+
+  /// Sign up as a driver
+  Future<Map<String, dynamic>> signUpDriver({
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String phone,
+    required String password,
+    required String licenseNumber,
+    required String licenseExpiry,
+  }) async {
+    try {
+      print('📡 DRIVER SIGNUP REQUEST STARTED');
+      state = state.copyWith(isLoading: true, errorMessage: null);
+
+      final response = await _dio().post(
+        'drivers/register',
+        data: {
+          'name': '$firstName $lastName',
+          'email': email,
+          'phone': phone,
+          'password': password,
+          'licenseNumber': licenseNumber,
+          'licenseExpiry': licenseExpiry,
+        },
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          validateStatus: (status) => status != null && status < 500,
+        ),
+      );
+
+      print('📥 DRIVER SIGNUP RESPONSE STATUS: ${response.statusCode}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final responseData = response.data as Map<String, dynamic>;
+        print('✅ Driver signup successful');
+
+        final userMap = responseData['user'] as Map<String, dynamic>?;
+        final token = responseData['token'] as String?;
+
+        if (token != null) {
+          await SecureStorage.saveToken(token);
+        }
+
+        if (userMap != null) {
+          await PreferencesService.saveUserData(json.encode(userMap));
+          final extractedId = _extractUserId(userMap);
+          if (extractedId != null) {
+            await SecureStorage.saveUserId(extractedId);
+          }
+        }
+
+        state = state.copyWith(
+          isLoading: false,
+          tempEmail: email,
+          token: token,
+          user: userMap,
+          isAuthenticated: token != null,
+          errorMessage: null,
+        );
+
+        return {
+          'success': true,
+          'message': responseData['message'] ?? 'Driver account created successfully',
+          'needs_verification': true,
+        };
+      } else {
+        final responseData = response.data as Map<String, dynamic>;
+        final errorMsg = responseData['data']?.toString() ??
+            responseData['message']?.toString() ??
+            responseData['responseMessage']?.toString() ??
+            'Registration failed';
+
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: errorMsg,
+        );
+
+        return {
+          'success': false,
+          'message': errorMsg,
+        };
+      }
+    } on DioException catch (e) {
+      print('❌ DRIVER SIGNUP DIO ERROR: ${e.message}');
+      String errorMessage = 'Driver signup failed';
+      
+      if (e.response?.data != null) {
+        try {
+          final errorData = e.response!.data as Map<String, dynamic>;
+          errorMessage = errorData['message']?.toString() ?? 
+                         errorData['data']?.toString() ?? 
+                         errorMessage;
+        } catch (_) {}
+      }
+
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: errorMessage,
+      );
+      return {
+        'success': false,
+        'message': errorMessage,
+      };
+    } catch (e) {
+      print('❌ DRIVER SIGNUP ERROR: $e');
       state = state.copyWith(
         isLoading: false,
         errorMessage: e.toString(),
@@ -276,12 +384,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<Map<String, dynamic>> login({
     required String email,
     required String password,
+    String? role,
   }) async {
     try {
       state = state.copyWith(isLoading: true, errorMessage: null);
 
+      final endpoint = role == 'driver' ? 'drivers/login' : 'auth/login';
+
       final response = await _dio().post(
-        'auth/login',
+        endpoint,
         data: {
           'email': email,
           'password': password,

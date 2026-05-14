@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:keke/screens/home_screen.dart';
 import 'package:keke/screens/login_screen.dart';
+import 'package:keke/screens/verify_otp_screen.dart';
 import 'package:keke/stores/auth_store.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
@@ -19,6 +20,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _licenseNumberController = TextEditingController();
+  final _licenseExpiryController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   bool _acceptTerms = false;
@@ -31,6 +34,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _licenseNumberController.dispose();
+    _licenseExpiryController.dispose();
     super.dispose();
   }
 
@@ -65,6 +70,17 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       return false;
     }
 
+    if (widget.role == 'driver') {
+      if (_licenseNumberController.text.isEmpty) {
+        _showError('Please enter your license number');
+        return false;
+      }
+      if (_licenseExpiryController.text.isEmpty) {
+        _showError('Please enter your license expiry date');
+        return false;
+      }
+    }
+
     if (!_acceptTerms) {
       _showError('You must accept the terms and conditions');
       return false;
@@ -79,19 +95,32 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     final authStore = ref.read(authNotifierProvider.notifier);
 
     try {
-      final result = await authStore.signUp(
-        firstName: _firstNameController.text.trim(),
-        lastName: _lastNameController.text.trim(),
-        email: _emailController.text.trim(),
-        phone: _phoneController.text.trim(),
-        password: _passwordController.text,
-        confirmPassword: _confirmPasswordController.text,
-        acceptTerms: _acceptTerms,
-        role: widget.role,
-      );
+      Map<String, dynamic> result;
+
+      if (widget.role == 'driver') {
+        result = await authStore.signUpDriver(
+          firstName: _firstNameController.text.trim(),
+          lastName: _lastNameController.text.trim(),
+          email: _emailController.text.trim(),
+          phone: _phoneController.text.trim(),
+          password: _passwordController.text,
+          licenseNumber: _licenseNumberController.text.trim(),
+          licenseExpiry: _licenseExpiryController.text.trim(),
+        );
+      } else {
+        result = await authStore.signUp(
+          firstName: _firstNameController.text.trim(),
+          lastName: _lastNameController.text.trim(),
+          email: _emailController.text.trim(),
+          phone: _phoneController.text.trim(),
+          password: _passwordController.text,
+          confirmPassword: _confirmPasswordController.text,
+          acceptTerms: _acceptTerms,
+          role: widget.role,
+        );
+      }
 
       if (result['success'] == true) {
-        // Navigate directly to Home screen (skipping OTP for now)
         if (mounted) {
           Navigator.pushAndRemoveUntil(
             context,
@@ -107,6 +136,33 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     }
   }
 
+  Future<void> _selectExpiryDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().add(const Duration(days: 365)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 3650)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFFBF5102),
+              onPrimary: Colors.white,
+              onSurface: Color(0xFF374151),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        _licenseExpiryController.text =
+            "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+      });
+    }
+  }
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -234,6 +290,27 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 },
                 icon: Icons.lock_outline,
               ),
+              const SizedBox(height: 18),
+
+              if (widget.role == 'driver') ...[
+                _buildTextField(
+                  controller: _licenseNumberController,
+                  label: 'License Number',
+                  hint: 'Enter your driver license number',
+                  icon: Icons.badge_outlined,
+                ),
+                const SizedBox(height: 18),
+                _buildTextField(
+                  controller: _licenseExpiryController,
+                  label: 'License Expiry',
+                  hint: 'YYYY-MM-DD',
+                  icon: Icons.calendar_today_outlined,
+                  readOnly: true,
+                  onTap: _selectExpiryDate,
+                ),
+                const SizedBox(height: 18),
+              ],
+
               const SizedBox(height: 24),
 
               // Accept Terms Checkbox
@@ -362,6 +439,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     bool isVisible = false,
     VoidCallback? onVisibilityChanged,
     IconData? icon,
+    bool readOnly = false,
+    VoidCallback? onTap,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -400,6 +479,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   controller: controller,
                   obscureText: isPassword && !isVisible,
                   keyboardType: inputType,
+                  readOnly: readOnly,
+                  onTap: onTap,
                   style: const TextStyle(
                     fontSize: 16,
                     color: Color(0xFF111827),

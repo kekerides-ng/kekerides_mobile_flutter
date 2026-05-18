@@ -2,247 +2,320 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:keke/screens/auth_choice_screen.dart';
 import 'package:keke/stores/auth_store.dart';
+import 'package:keke/stores/vehicle_store.dart';
+import 'package:keke/screens/vehicle_form_screen.dart';
 
-class DriverAccountScreen extends ConsumerWidget {
+class DriverAccountScreen extends ConsumerStatefulWidget {
   const DriverAccountScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DriverAccountScreen> createState() => _DriverAccountScreenState();
+}
+
+class _DriverAccountScreenState extends ConsumerState<DriverAccountScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Fetch vehicles when the screen is first loaded
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(vehicleProvider.notifier).fetchVehicles();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
     final user = authState.user;
+    final vehicleState = ref.watch(vehicleProvider);
+    final vehicle = vehicleState.vehicles.isNotEmpty ? vehicleState.vehicles.first : null;
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 20),
-              // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Account',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
+        child: RefreshIndicator(
+          onRefresh: () => ref.read(vehicleProvider.notifier).fetchVehicles(),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 20),
+                // Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Account',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF007BFF), // Blue for Gold Tier
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'Gold Tier',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
+
+                // Profile Section
+                Center(
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Image.asset(
+                            'images/driver_profile_female.png',
+                            width: 120,
+                            height: 120,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              width: 120,
+                              height: 120,
+                              color: Colors.grey[200],
+                              child: const Icon(Icons.person, size: 60, color: Colors.grey),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        user?['name'] ?? 'Driver',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        user?['email'] ?? 'Joined March 2022',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        height: 40,
+                        child: OutlinedButton.icon(
+                          onPressed: () {},
+                          icon: const Icon(Icons.edit, size: 16, color: Color(0xFFBF5102)),
+                          label: const Text(
+                            'Edit Profile',
+                            style: TextStyle(color: Color(0xFFBF5102), fontWeight: FontWeight.bold),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: Colors.grey[200]!),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Stats Card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF8D3B01), // Darker brown
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Overall Rating',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.8),
+                              fontSize: 14,
+                            ),
+                          ),
+                          const Icon(Icons.star, color: Colors.white, size: 20),
+                        ],
+                      ),
+                      Text(
+                        user?['ratingAverage']?.toString() ?? '0.00',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 48,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          _buildStatItem('Total Trips', user?['totalCompletedRides']?.toString() ?? '0'),
+                          const Spacer(),
+                          _buildStatItem('Status', user?['verificationStatus']?.toString().toUpperCase() ?? 'PENDING'),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Vehicle Details Section
+                _buildSectionHeader(Icons.directions_car, 'Vehicle Details'),
+                const SizedBox(height: 16),
+                if (vehicleState.isLoading && vehicleState.vehicles.isEmpty)
+                  const Center(child: CircularProgressIndicator())
+                else if (vehicle != null) ...[
+                  _buildDetailTile('Make & Model', '${vehicle.model} (${vehicle.year})'),
+                  const SizedBox(height: 12),
+                  _buildDetailTile(
+                    'License Plate',
+                    vehicle.plateNumber,
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: const Text('NGA', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF007BFF), // Blue for Gold Tier
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      'Gold Tier',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
+                  const SizedBox(height: 20),
+                  Center(
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => VehicleFormScreen(vehicle: vehicle),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        'Edit Vehicle Details',
+                        style: TextStyle(
+                          color: Color(0xFFBF5102),
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
+                    ),
+                  ),
+                ] else ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.orange[50],
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.orange[100]!),
+                    ),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.no_crash_outlined, size: 48, color: Colors.orange),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'No vehicle registered',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Add your vehicle to start accepting rides',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const VehicleFormScreen()),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFBF5102),
+                            foregroundColor: Colors.white,
+                          ),
+                          child: const Text('ADD VEHICLE'),
+                        ),
+                      ],
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 32),
+                const SizedBox(height: 32),
 
-              // Profile Section
-              Center(
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: Image.asset(
-                          'images/driver_profile_female.png', // Assuming this asset exists or using a placeholder
-                          width: 120,
-                          height: 120,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            width: 120,
-                            height: 120,
-                            color: Colors.grey[200],
-                            child: const Icon(Icons.person, size: 60, color: Colors.grey),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      user?['name'] ?? 'Driver',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      user?['email'] ?? 'Joined March 2022',
+                // Documents Section
+                _buildSectionHeader(Icons.description, 'Documents'),
+                const SizedBox(height: 16),
+                _buildDocumentTile('Driver\'s License', 'Expires: ${user?['licenseExpiry'] ?? 'N/A'}', true),
+                const SizedBox(height: 12),
+                _buildDocumentTile('License Number', user?['licenseNumber'] ?? 'N/A', true),
+                const SizedBox(height: 12),
+                _buildDocumentTile(
+                  'Roadworthiness Cert.',
+                  'Expires in 14 days',
+                  false,
+                  isWarning: true,
+                  warningAction: 'Update',
+                ),
+                const SizedBox(height: 32),
+
+                // Settings Section
+                _buildActionTile(Icons.settings, 'App Settings'),
+                const SizedBox(height: 12),
+                _buildActionTile(Icons.notifications, 'Notifications'),
+                const SizedBox(height: 24),
+                Center(
+                  child: TextButton(
+                    onPressed: () {
+                      ref.read(authNotifierProvider.notifier).logout();
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (context) => const AuthChoiceScreen()),
+                        (route) => false,
+                      );
+                    },
+                    child: const Text(
+                      'Log Out',
                       style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      height: 40,
-                      child: OutlinedButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(Icons.edit, size: 16, color: Color(0xFFBF5102)),
-                        label: const Text(
-                          'Edit Profile',
-                          style: TextStyle(color: Color(0xFFBF5102), fontWeight: FontWeight.bold),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: Colors.grey[200]!),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 32),
-
-              // Stats Card
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF8D3B01), // Darker brown
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Overall Rating',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.8),
-                            fontSize: 14,
-                          ),
-                        ),
-                        const Icon(Icons.star, color: Colors.white, size: 20),
-                      ],
-                    ),
-                    Text(
-                      user?['ratingAverage']?.toString() ?? '0.00',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 48,
+                        color: Colors.red,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    Row(
-                      children: [
-                        _buildStatItem('Total Trips', user?['totalCompletedRides']?.toString() ?? '0'),
-                        const Spacer(),
-                        _buildStatItem('Status', user?['verificationStatus']?.toString().toUpperCase() ?? 'PENDING'),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 32),
-
-              // Vehicle Details Section
-              _buildSectionHeader(Icons.directions_car, 'Vehicle Details'),
-              const SizedBox(height: 16),
-              _buildDetailTile('Make & Model', 'Toyota Camry 2018'),
-              const SizedBox(height: 12),
-              _buildDetailTile(
-                'License Plate',
-                'LSD-429-DE',
-                trailing: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: Colors.grey[300]!),
-                  ),
-                  child: const Text('NGA', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Center(
-                child: TextButton(
-                  onPressed: () {},
-                  child: const Text(
-                    'View Vehicle Documents',
-                    style: TextStyle(
-                      color: Color(0xFFBF5102),
-                      fontWeight: FontWeight.bold,
-                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 32),
-
-              // Documents Section
-              _buildSectionHeader(Icons.description, 'Documents'),
-              const SizedBox(height: 16),
-              _buildDocumentTile('Driver\'s License', 'Expires: ${user?['licenseExpiry'] ?? 'N/A'}', true),
-              const SizedBox(height: 12),
-              _buildDocumentTile('License Number', user?['licenseNumber'] ?? 'N/A', true),
-              const SizedBox(height: 12),
-              _buildDocumentTile(
-                'Roadworthiness Cert.',
-                'Expires in 14 days',
-                false,
-                isWarning: true,
-                warningAction: 'Update',
-              ),
-              const SizedBox(height: 32),
-
-              // Settings Section
-              _buildActionTile(Icons.settings, 'App Settings'),
-              const SizedBox(height: 12),
-              _buildActionTile(Icons.notifications, 'Notifications'),
-              const SizedBox(height: 24),
-              Center(
-                child: TextButton(
-                  onPressed: () {
-                    ref.read(authNotifierProvider.notifier).logout();
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(builder: (context) => const AuthChoiceScreen()),
-                      (route) => false,
-                    );
-                  },
-                  child: const Text(
-                    'Log Out',
-                    style: TextStyle(
-                      color: Colors.red,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 40),
-            ],
+                const SizedBox(height: 40),
+              ],
+            ),
           ),
         ),
       ),

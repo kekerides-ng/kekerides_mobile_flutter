@@ -1,21 +1,23 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:location/location.dart';
+import 'package:location/location.dart' as loc;
+import '../stores/location_store.dart';
 
-class MapWidget extends StatefulWidget {
+class MapWidget extends ConsumerStatefulWidget {
   const MapWidget({super.key});
 
   @override
-  State<MapWidget> createState() => _MapWidgetState();
+  ConsumerState<MapWidget> createState() => _MapWidgetState();
 }
 
-class _MapWidgetState extends State<MapWidget> {
+class _MapWidgetState extends ConsumerState<MapWidget> {
   final Set<Marker> _markers = {};
   GoogleMapController? _mapController;
-  LocationData? _currentLocation;
-  final Location _location = Location();
-  StreamSubscription<LocationData>? _locationSubscription;
+  loc.LocationData? _currentLocation;
+  final loc.Location _location = loc.Location();
+  StreamSubscription<loc.LocationData>? _locationSubscription;
 
   @override
   void initState() {
@@ -32,7 +34,7 @@ class _MapWidgetState extends State<MapWidget> {
 
   void _requestLocationPermission() async {
     bool serviceEnabled;
-    PermissionStatus permissionGranted;
+    loc.PermissionStatus permissionGranted;
 
     serviceEnabled = await _location.serviceEnabled();
     if (!mounted) return;
@@ -46,26 +48,27 @@ class _MapWidgetState extends State<MapWidget> {
 
     permissionGranted = await _location.hasPermission();
     if (!mounted) return;
-    if (permissionGranted == PermissionStatus.denied) {
+    if (permissionGranted == loc.PermissionStatus.denied) {
       permissionGranted = await _location.requestPermission();
       if (!mounted) return;
-      if (permissionGranted != PermissionStatus.granted) {
+      if (permissionGranted != loc.PermissionStatus.granted) {
         return;
       }
     }
 
-    _locationSubscription = _location.onLocationChanged.listen((LocationData currentLocation) {
+    _locationSubscription = _location.onLocationChanged.listen((loc.LocationData currentLocation) {
       if (!mounted) return;
       setState(() {
         _currentLocation = currentLocation;
-        _updateMarker();
       });
     });
   }
 
-  void _updateMarker() {
-    if (_currentLocation != null) {
-      _markers.clear();
+  void _updateMarkers(List<dynamic> nearbyDrivers) {
+    _markers.clear();
+    
+    // User marker (if myLocationEnabled is false, otherwise use built-in)
+    /*if (_currentLocation != null) {
       _markers.add(
         Marker(
           markerId: const MarkerId('current_location'),
@@ -73,6 +76,24 @@ class _MapWidgetState extends State<MapWidget> {
           infoWindow: const InfoWindow(title: 'My Location'),
         ),
       );
+    }*/
+
+    // Add nearby drivers
+    for (var driver in nearbyDrivers) {
+      final id = driver['driverId']?.toString() ?? driver['id']?.toString() ?? 'unknown';
+      final lat = driver['latitude'] as double?;
+      final lng = driver['longitude'] as double?;
+      
+      if (lat != null && lng != null) {
+        _markers.add(
+          Marker(
+            markerId: MarkerId('driver_$id'),
+            position: LatLng(lat, lng),
+            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+            infoWindow: InfoWindow(title: 'Driver $id'),
+          ),
+        );
+      }
     }
   }
 
@@ -96,6 +117,9 @@ class _MapWidgetState extends State<MapWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final locationState = ref.watch(locationProvider);
+    _updateMarkers(locationState.nearbyDrivers);
+
     return GoogleMap(
       initialCameraPosition: _kGooglePlex,
       myLocationEnabled: true,

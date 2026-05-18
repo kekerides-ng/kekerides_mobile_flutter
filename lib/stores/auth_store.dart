@@ -646,6 +646,45 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Toggle online/offline status for drivers
+  Future<void> toggleOnlineStatus() async {
+    if (state.user == null) return;
+    
+    final oldUser = state.user!;
+    final isOnline = oldUser['isOnline'] == true;
+    final newStatus = !isOnline;
+    
+    // Optimistic update
+    final updatedUser = Map<String, dynamic>.from(oldUser);
+    updatedUser['isOnline'] = newStatus;
+    state = state.copyWith(user: updatedUser, errorMessage: null);
+    
+    try {
+      final userId = _extractUserId(oldUser);
+      final endpoint = oldUser['role'] == 'driver' ? 'drivers/$userId/online-status' : 'users/status';
+      await _dio().patch(endpoint, data: {'isOnline': newStatus});
+      
+      // Persist updated user data
+      await PreferencesService.saveUserData(json.encode(updatedUser));
+    } catch (e) {
+      print('Error toggling online status: $e');
+      
+      String errorMsg = 'Failed to update status';
+      if (e is DioException && e.response?.data != null) {
+        try {
+          final data = e.response!.data as Map<String, dynamic>;
+          errorMsg = data['message']?.toString() ?? errorMsg;
+        } catch (_) {}
+      }
+
+      // Revert on error
+      state = state.copyWith(
+        user: oldUser,
+        errorMessage: errorMsg,
+      );
+    }
+  }
+
   /// Internal helper to perform complete logout cleanup
   Future<void> _performFullLogout() async {
     print('AUTH: Performing full logout');

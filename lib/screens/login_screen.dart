@@ -27,19 +27,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  // bool _validateFields() {
-  //   if (_emailController.text.isEmpty || !_emailController.text.contains('@')) {
-  //     _showError('Please enter a valid email address');
-  //     return false;
-  //   }
-  //
-  //   if (_passwordController.text.isEmpty) {
-  //     _showError('Please enter your password');
-  //     return false;
-  //   }
-  //
-  //   return true;
-  // }
 
   Future<void> _login() async {
     final email = _emailController.text.trim();
@@ -251,7 +238,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: _login,
+                    onPressed: isLoading ? null : _login,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFBF5102),
                       foregroundColor: Colors.white,

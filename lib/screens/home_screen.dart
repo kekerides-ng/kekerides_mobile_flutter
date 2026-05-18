@@ -11,6 +11,9 @@ import 'package:keke/screens/incoming_request_screen.dart';
 import 'package:keke/screens/ride_options_screen.dart';
 import 'package:keke/screens/wallet_screen.dart';
 import 'package:keke/stores/auth_store.dart';
+import 'package:keke/stores/vehicle_store.dart';
+import 'package:keke/stores/location_store.dart';
+import 'package:keke/screens/vehicle_form_screen.dart';
 import 'package:keke/widgets/map_widget.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -24,6 +27,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedIndex = 0;
   final GlobalKey<State<MapWidget>> _mapKey = GlobalKey<State<MapWidget>>();
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!AppConfig.instance.isPassenger) {
+        ref.read(vehicleProvider.notifier).fetchVehicles();
+      }
+      
+      // Always start tracking to get current user location (for passengers and drivers)
+      // The store handles role-specific reporting to server
+      ref.read(locationProvider.notifier).startLocationTracking();
+    });
+  }
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -33,6 +50,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final isPassenger = AppConfig.instance.isPassenger;
+
+    if (isPassenger) {
+      final currentLocation = ref.watch(locationProvider).currentLocation;
+      if (currentLocation != null) {
+        // Fetch nearby drivers when passenger's location is available
+        // We do this in a post frame callback or similar to avoid building during build
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.read(locationProvider.notifier).fetchNearbyDrivers(
+            currentLocation.latitude!,
+            currentLocation.longitude!,
+          );
+        });
+      }
+    }
 
     return Scaffold(
       body: IndexedStack(
@@ -80,6 +111,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final balance = user?['walletBalance']?.toString() ?? '0.00';
     final isOnline = user?['isOnline'] == true;
 
+    final vehicleState = ref.watch(vehicleProvider);
+    final hasVehicle = vehicleState.vehicles.isNotEmpty;
+
     return Stack(
       children: [
         MapWidget(key: _mapKey),
@@ -112,28 +146,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Text(
-                              'THE RESILIENT',
-                              style: TextStyle(
-                                color: Color(0xFFBF5102),
-                                fontSize: 10,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                            Text(
-                              name,
-                              style: const TextStyle(
-                                color: Color(0xFFBF5102),
-                                fontSize: 16,
-                                fontWeight: FontWeight.w900,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
+                        child: Text(
+                          name,
+                          style: const TextStyle(
+                            color: Color(0xFFBF5102),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       const Icon(Icons.notifications, color: Color(0xFFBF5102), size: 24),
@@ -194,6 +214,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ],
                   ),
                 ),
+
+                // Vehicle CTA (if missing)
+                if (!hasVehicle && !vehicleState.isLoading)
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const VehicleFormScreen()),
+                      );
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(top: 12),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.orange[50],
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.orange[200]!),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "No Vehicle Registered",
+                                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange),
+                                ),
+                                Text(
+                                  "Tap to register your vehicle and start earning.",
+                                  style: TextStyle(fontSize: 12, color: Colors.orange),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.orange),
+                        ],
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -219,17 +281,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 width: double.infinity,
                 height: 60,
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    // Logic for incoming request simulation (for testing)
-                    _simulateIncomingRequest();
+                  onPressed: () async {
+                    await ref.read(authNotifierProvider.notifier).toggleOnlineStatus();
+                    
+                    final currentAuthState = ref.read(authNotifierProvider);
+                    if (currentAuthState.errorMessage != null && mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(currentAuthState.errorMessage!)),
+                      );
+                    }
+
+                    final isOnlineNow = currentAuthState.user?['isOnline'] == true;
+                    
+                    if (isOnlineNow) {
+                      ref.read(locationProvider.notifier).startLocationTracking();
+                    } else {
+                      ref.read(locationProvider.notifier).stopLocationTracking();
+                    }
                   },
                   icon: const Icon(Icons.power_settings_new),
-                  label: const Text(
-                    "GO OFFLINE",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  label: Text(
+                    isOnline ? "GO OFFLINE" : "GO ONLINE",
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFBF5102),
+                    backgroundColor: isOnline ? const Color(0xFFBF5102) : Colors.green,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),

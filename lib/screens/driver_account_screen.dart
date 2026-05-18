@@ -147,7 +147,7 @@ class DriverAccountScreen extends ConsumerWidget {
                       ],
                     ),
                     Text(
-                      user?['ratingAverage']?.toString() ?? '4.96',
+                      user?['ratingAverage']?.toString() ?? '0.00',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 48,
@@ -157,9 +157,9 @@ class DriverAccountScreen extends ConsumerWidget {
                     const SizedBox(height: 24),
                     Row(
                       children: [
-                        _buildStatItem('Total Trips', user?['totalRides']?.toString() ?? '1,248'),
+                        _buildStatItem('Total Trips', user?['totalCompletedRides']?.toString() ?? '0'),
                         const Spacer(),
-                        _buildStatItem('Years Active', '2.5'),
+                        _buildStatItem('Status', user?['verificationStatus']?.toString().toUpperCase() ?? 'PENDING'),
                       ],
                     ),
                   ],
@@ -203,9 +203,9 @@ class DriverAccountScreen extends ConsumerWidget {
               // Documents Section
               _buildSectionHeader(Icons.description, 'Documents'),
               const SizedBox(height: 16),
-              _buildDocumentTile('Driver\'s License', 'Expires: Oct 2025', true),
+              _buildDocumentTile('Driver\'s License', 'Expires: ${user?['licenseExpiry'] ?? 'N/A'}', true),
               const SizedBox(height: 12),
-              _buildDocumentTile('Vehicle Insurance', 'Expires: Jan 2025', true),
+              _buildDocumentTile('License Number', user?['licenseNumber'] ?? 'N/A', true),
               const SizedBox(height: 12),
               _buildDocumentTile(
                 'Roadworthiness Cert.',

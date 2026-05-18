@@ -300,7 +300,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         final responseData = response.data as Map<String, dynamic>;
         print('✅ Driver signup successful');
 
-        final userMap = responseData['user'] as Map<String, dynamic>?;
+        final userMap = (responseData['user'] ?? responseData['driver']) as Map<String, dynamic>?;
         final token = responseData['token'] as String?;
 
         if (token != null) {
@@ -401,7 +401,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       final data = response.data;
       final token = data['token'] ?? data['data']?['token'];
-      final userMap = data['user'] as Map<String, dynamic>?;
+      final userMap = (data['user'] ?? data['driver'] ?? data['data']?['user']) as Map<String, dynamic>?;
 
       if (token != null && token.isNotEmpty) {
         await SecureStorage.saveToken(token);
@@ -500,7 +500,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       final data = response.data;
       final token = data['token'] ?? data['data']?['token'];
-      final userMap = data['user'] as Map<String, dynamic>?;
+      final userMap = (data['user'] ?? data['driver'] ?? data['data']?['user']) as Map<String, dynamic>?;
 
       if (token != null && token.isNotEmpty) {
         await SecureStorage.saveToken(token);

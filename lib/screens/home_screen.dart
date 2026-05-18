@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:keke/app_config.dart';
 import 'package:keke/screens/driver_account_screen.dart';
 import 'package:keke/screens/driver_ratings_screen.dart';
@@ -9,16 +10,17 @@ import 'package:keke/screens/destination_search_screen.dart';
 import 'package:keke/screens/incoming_request_screen.dart';
 import 'package:keke/screens/ride_options_screen.dart';
 import 'package:keke/screens/wallet_screen.dart';
+import 'package:keke/stores/auth_store.dart';
 import 'package:keke/widgets/map_widget.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedIndex = 0;
   final GlobalKey<State<MapWidget>> _mapKey = GlobalKey<State<MapWidget>>();
 
@@ -72,6 +74,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildDriverHomeTab() {
+    final authState = ref.watch(authNotifierProvider);
+    final user = authState.user;
+    final name = user?['name']?.toString().toUpperCase() ?? 'NAVIGATOR';
+    final balance = user?['walletBalance']?.toString() ?? '0.00';
+    final isOnline = user?['isOnline'] == true;
+
     return Stack(
       children: [
         MapWidget(key: _mapKey),
@@ -107,8 +115,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Text(
+                          children: [
+                            const Text(
                               'THE RESILIENT',
                               style: TextStyle(
                                 color: Color(0xFFBF5102),
@@ -117,12 +125,13 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                             Text(
-                              'NAVIGATOR',
-                              style: TextStyle(
+                              name,
+                              style: const TextStyle(
                                 color: Color(0xFFBF5102),
                                 fontSize: 16,
                                 fontWeight: FontWeight.w900,
                               ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
@@ -151,7 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "TODAY'S EARNINGS",
+                        "WALLET BALANCE",
                         style: TextStyle(
                           color: Colors.grey[400],
                           fontSize: 12,
@@ -161,9 +170,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          const Text(
-                            "₦ 45,200",
-                            style: TextStyle(
+                          Text(
+                            "₦ $balance",
+                            style: const TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
                             ),
@@ -172,12 +181,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Colors.blue,
+                              color: isOnline ? Colors.green : Colors.grey,
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            child: const Text(
-                              "Online",
-                              style: TextStyle(color: Colors.white, fontSize: 12),
+                            child: Text(
+                              isOnline ? "Online" : "Offline",
+                              style: const TextStyle(color: Colors.white, fontSize: 12),
                             ),
                           ),
                         ],
@@ -246,6 +255,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildPassengerHomeTab() {
+    final authState = ref.watch(authNotifierProvider);
+    final user = authState.user;
+    final name = user?['name'] ?? 'Traveler';
+
     return Stack(
       children: [
         // Map Widget
@@ -376,9 +389,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       controller: scrollController,
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       children: [
-                        const Text(
-                          'Good evening, Adewale',
-                          style: TextStyle(
+                        Text(
+                          'Good evening, $name',
+                          style: const TextStyle(
                             fontSize: 22.0,
                             fontWeight: FontWeight.bold,
                           ),
